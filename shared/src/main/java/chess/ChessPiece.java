@@ -13,8 +13,8 @@ import java.util.Collection;
 public class ChessPiece
 {
 
-    private ChessGame.TeamColor color;
-    private ChessPiece.PieceType type;
+    private final ChessGame.TeamColor color;
+    private final ChessPiece.PieceType type;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type)
     {
@@ -62,32 +62,6 @@ public class ChessPiece
     {
         return MoveCalculator.getMoveCalculator(board, myPosition).returnMoves();
     }
-
-//    public void printMoves(Collection<ChessMove> moves)
-//    {
-//
-//        if (moves.isEmpty())
-//        {
-//            System.out.println("No available moves.");
-//            return;
-//        }
-//
-//        System.out.println("Available moves:");
-//
-//        for (ChessMove move : moves)
-//        {
-//            ChessPosition from = move.getStartPosition();
-//            ChessPosition to = move.getEndPosition();
-//
-//
-//            int fromCol = from.getColumn();
-//            int fromRow = from.getRow();
-//            int toCol = to.getColumn();
-//            int toRow = to.getRow();
-//
-//            System.out.println(fromRow + "," + fromCol + " -> " + toRow + "," + toCol + move.hashCode());
-//        }
-//    }
 
     @Override
     public int hashCode()

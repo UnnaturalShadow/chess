@@ -4,6 +4,7 @@ import chess.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class MoveCalculator
 {
@@ -36,7 +37,7 @@ public class MoveCalculator
         } else if (type == ChessPiece.PieceType.KING) {
             return new KingMoveCalculator(board, position);
         } else if (type == ChessPiece.PieceType.PAWN) {
-            //return new PawnMoveCalculator(board, position);
+            return new PawnMoveCalculator(board, position);
         }
 
         return null;
@@ -174,6 +175,82 @@ public class MoveCalculator
     public ChessGame.TeamColor getColor(int row, int col)
     {
         return this.board.getPiece(new ChessPosition(row, col)).getTeamColor();
+    }
+
+    private boolean inBounds(int row, int col)
+    {
+        return row >= 1 && row <= 8 && col >= 1 && col <= 8;
+    }
+
+    private boolean isEnemyPiece(int row, int col, ChessPiece piece)
+    {
+        ChessPiece target = board.getPiece(new ChessPosition(row, col));
+        return target != null && target.getTeamColor() != piece.getTeamColor();
+    }
+
+    public void pawnMoves()
+    {
+        int r = position.getRow();
+        int c = position.getColumn();
+        ChessGame.TeamColor color = piece.getTeamColor();
+
+        int dir = (color == ChessGame.TeamColor.WHITE) ? 1 : -1; // white goes up, black goes down
+        int startRow = (color == ChessGame.TeamColor.WHITE) ? 2 : 7;
+        int promoRow = (color == ChessGame.TeamColor.WHITE) ? 8 : 1;
+
+        // one step forward
+        int forwardRow = r + dir;
+        if (inBounds(forwardRow, c) && board.getPiece(new ChessPosition(forwardRow, c)) == null)
+        {
+            if (forwardRow == promoRow)
+            {
+                for (ChessPiece.PieceType promo : List.of(
+                        ChessPiece.PieceType.QUEEN,
+                        ChessPiece.PieceType.ROOK,
+                        ChessPiece.PieceType.BISHOP,
+                        ChessPiece.PieceType.KNIGHT))
+                {
+                    moves.add(new ChessMove(position, new ChessPosition(forwardRow, c), promo));
+                }
+            }
+            else
+            {
+                moves.add(new ChessMove(position, new ChessPosition(forwardRow, c), null));
+            }
+        }
+
+        // two steps forward (only from start row, and only if path is clear)
+        int doubleRow = r + 2 * dir;
+        if (r == startRow &&
+                board.getPiece(new ChessPosition(forwardRow, c)) == null &&
+                board.getPiece(new ChessPosition(doubleRow, c)) == null)
+        {
+            moves.add(new ChessMove(position, new ChessPosition(doubleRow, c), null));
+        }
+
+        // diagonal captures
+        for (int dc : new int[]{-1, 1})
+        {
+            int captureCol = c + dc;
+            if (inBounds(forwardRow, captureCol) && isEnemyPiece(forwardRow, captureCol, piece))
+            {
+                if (forwardRow == promoRow)
+                {
+                    for (ChessPiece.PieceType promo : List.of(
+                            ChessPiece.PieceType.QUEEN,
+                            ChessPiece.PieceType.ROOK,
+                            ChessPiece.PieceType.BISHOP,
+                            ChessPiece.PieceType.KNIGHT))
+                    {
+                        moves.add(new ChessMove(position, new ChessPosition(forwardRow, captureCol), promo));
+                    }
+                }
+                else
+                {
+                    moves.add(new ChessMove(position, new ChessPosition(forwardRow, captureCol), null));
+                }
+            }
+        }
     }
 
     public void addMovesUsingModifiers(int[][] modifiers)
