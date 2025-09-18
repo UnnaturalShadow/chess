@@ -69,6 +69,22 @@ public class ChessPiece
         return 31 * type.hashCode() + color.hashCode();
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+        ChessPiece that = (ChessPiece) o;
+        return color == that.color && type == that.type;
+    }
+
+
     public String toString()
     {
         String str = "";

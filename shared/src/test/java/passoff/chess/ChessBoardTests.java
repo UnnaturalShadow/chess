@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class ChessBoardTests extends EqualsTestingUtility<ChessBoard> {
     public ChessBoardTests() {
@@ -35,7 +36,8 @@ public class ChessBoardTests extends EqualsTestingUtility<ChessBoard> {
 
     @Test
     @DisplayName("Add and Get Piece")
-    public void getAddPiece() {
+    public void getAddPiece()
+    {
         ChessPosition position = new ChessPosition(4, 4);
         ChessPiece piece = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
 
@@ -108,5 +110,7 @@ public class ChessBoardTests extends EqualsTestingUtility<ChessBoard> {
 
         return board;
     }
+
+
 
 }
