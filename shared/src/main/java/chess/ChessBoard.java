@@ -12,9 +12,7 @@ import java.util.Objects;
 public class ChessBoard
 {
 
-    // private int maxSize = 8;
     private int maxPieces = 32;
-    private int numPieces = 0;
     private ChessPiece[] pieces = new ChessPiece[maxPieces];
     private ChessPosition[] positions = new ChessPosition[maxPieces];
     private ChessPiece[][] tiles = new ChessPiece[8][8];
