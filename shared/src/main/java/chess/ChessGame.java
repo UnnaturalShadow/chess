@@ -1,6 +1,8 @@
 package chess;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * For a class that can manage a chess game, making moves on a board
@@ -17,7 +19,7 @@ public class ChessGame
 
     public ChessGame()
     {
-
+        turn = TeamColor.WHITE;
     }
 
     /**
@@ -56,6 +58,10 @@ public class ChessGame
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition)
     {
+        if(board.getPiece(startPosition) == null)
+        {
+            return null;
+        }
         return board.getPiece(startPosition).pieceMoves(board, startPosition);
     }
 
@@ -72,34 +78,64 @@ public class ChessGame
            ChessPosition startPosition = move.getStartPosition();
            ChessPiece toMove = board.getPiece(startPosition);
            board.removePiece(startPosition);
-           board.addPiece(move.getEndPosition(), toMove);
+           if(move.getPromotionPiece() != null)
+           {
+               board.addPiece(move.getEndPosition(), new ChessPiece(turn, move.getPromotionPiece()));
+           }
+           else
+           {
+               board.addPiece(move.getEndPosition(), toMove);
+           }
+
+           changeTurn();
            return;
        }
        throw new InvalidMoveException("Not a legal move");
+    }
+
+    public void changeTurn()
+    {
+        turn = (turn == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
     }
 
     public boolean canMakeMove(ChessMove move)
     {
         ChessPosition startPosition = move.getStartPosition();
         ChessPiece toMove = board.getPiece(startPosition);
+        if(toMove == null)
+        {
+            return false;
+        }
+        if(toMove.getTeamColor() != turn)
+        {
+            return false;
+        }
         Collection<ChessMove> moves = validMoves(startPosition);
         for(ChessMove validMove : moves)
         {
             if(move.equals(validMove))
             {
-                ChessBoard current = board;
-                board.removePiece(startPosition);
-                board.addPiece(move.getEndPosition(), toMove);
-                if(!isInCheck(turn))
+                board.removePiece(move.getStartPosition());
+                ChessPiece killed = board.getPiece(move.getEndPosition());
+                if(move.getPromotionPiece() != null)
                 {
-                    board = current;
-                    return true;
+                    board.addPiece(move.getEndPosition(), new ChessPiece(turn, move.getPromotionPiece()));
                 }
                 else
                 {
-                    board = current;
+                    board.addPiece(move.getEndPosition(), toMove);
+                }
+                if (isInCheck(turn))
+                {
+                    board.removePiece(move.getEndPosition());
+                    board.addPiece(move.getEndPosition(), killed);
+                    board.addPiece(move.getStartPosition(), toMove);
                     return false;
                 }
+                board.removePiece(move.getEndPosition());
+                board.addPiece(move.getEndPosition(), killed);
+                board.addPiece(move.getStartPosition(), toMove);
+                return true;
             }
         }
         return false;
@@ -128,7 +164,7 @@ public class ChessGame
                         Collection<ChessMove> moves = currentPiece.pieceMoves(board, currentPosition);
                         for(ChessMove move : moves)
                         {
-                            if(move.getEndPosition() == kingPosition)
+                            if(move.getEndPosition().equals(kingPosition))
                             {
                                 return true;
                             }
@@ -180,7 +216,7 @@ public class ChessGame
                 }
             }
         }
-        return true;
+        return false;
     }
 
     /**
@@ -228,5 +264,25 @@ public class ChessGame
     public ChessBoard getBoard()
     {
         return this.board;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return 31 * board.hashCode() + turn.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+        ChessGame that = (ChessGame) o;
+        return this.board.equals(that.getBoard()) && turn == that.getTeamTurn();
     }
 }

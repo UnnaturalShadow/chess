@@ -13,13 +13,16 @@ public class ChessBoard
 {
 
     private int maxPieces = 32;
-    private ChessPiece[] pieces = new ChessPiece[maxPieces];
-    private ChessPosition[] positions = new ChessPosition[maxPieces];
     private ChessPiece[][] tiles = new ChessPiece[8][8];
 
     public ChessBoard()
     {
 
+    }
+
+    public ChessBoard(ChessPiece[][] oldBoard)
+    {
+        this.tiles = oldBoard;
     }
 
     /**
