@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * The base class that manages the other move calculators and holds
+ * their main methods.
+ */
 public class MoveCalculator
 {
     ChessPosition position;
@@ -13,6 +17,12 @@ public class MoveCalculator
     ChessPiece piece;
     ArrayList<ChessMove> moves = new ArrayList<>();
 
+    /**
+     * Constructor for the class, requires an existing ChessBoard
+     * and a position on that board to calculate moves for
+     * @param board The board that moves are calculated for
+     * @param position The position on that board that moves are calculated from
+     */
     MoveCalculator (ChessBoard board, ChessPosition position)
     {
         this.position = position;
@@ -20,6 +30,14 @@ public class MoveCalculator
         this.piece = board.getPiece(position);
     }
 
+    /**
+     * Based on the given board and position the piece type is calculated
+     * and a MoveCalculator of the correct subclass is created to calculate
+     * the moves specific to that piece.
+     * @param board The board that moves are calculated for
+     * @param position The position on that board that moves are calculated from
+     * @return a subclass of MoveCalculator specified to the given piece.
+     */
     public static MoveCalculator getMoveCalculator(ChessBoard board, ChessPosition position)
     {
 
@@ -43,6 +61,10 @@ public class MoveCalculator
         return null;
     }
 
+    /**
+     * Returns the moves array containing the list of valid moves
+     * @return the ArrayList of ChessMoves moves
+     */
     public Collection<ChessMove> returnMoves()
     {
         return moves;
@@ -107,7 +129,6 @@ public class MoveCalculator
     }
 
 
-
     public void diagonalMoves()
     {
         int row = position.getRow();
@@ -165,7 +186,6 @@ public class MoveCalculator
             moves.add(new ChessMove(position, new ChessPosition(r, c), null));
         }
     }
-
 
     public boolean checkCollision(int row, int col)
     {
