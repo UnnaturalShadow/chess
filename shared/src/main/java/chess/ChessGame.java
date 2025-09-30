@@ -1,5 +1,6 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -19,6 +20,8 @@ public class ChessGame
 
     public ChessGame()
     {
+        board = new ChessBoard();
+        board.resetBoard();
         turn = TeamColor.WHITE;
     }
 
@@ -62,8 +65,39 @@ public class ChessGame
         {
             return null;
         }
-        return board.getPiece(startPosition).pieceMoves(board, startPosition);
+        Collection<ChessMove> moves = board.getPiece(startPosition).pieceMoves(board, startPosition);
+        Collection<ChessMove> legalMoves = new ArrayList<ChessMove>();
+        for(ChessMove move : moves)
+        {
+            boolean legal = true;
+            ChessPiece toMove = board.getPiece(move.getStartPosition());
+            board.removePiece(move.getStartPosition());
+            ChessPiece killed = board.getPiece(move.getEndPosition());
+            if(move.getPromotionPiece() != null)
+            {
+                board.addPiece(move.getEndPosition(), new ChessPiece(turn, move.getPromotionPiece()));
+            }
+            else
+            {
+                board.addPiece(move.getEndPosition(), toMove);
+            }
+            if (isInCheck(toMove.getTeamColor()))
+            {
+                legal = false;
+            }
+            board.removePiece(move.getEndPosition());
+            board.addPiece(move.getEndPosition(), killed);
+            board.addPiece(move.getStartPosition(), toMove);
+            if(legal)
+            {
+                legalMoves.add(move);
+//                System.out.println(move);
+            }
+        }
+        return legalMoves;
     }
+
+
 
     /**
      * Makes a move in a chess game
@@ -77,6 +111,10 @@ public class ChessGame
        {
            ChessPosition startPosition = move.getStartPosition();
            ChessPiece toMove = board.getPiece(startPosition);
+           if(toMove.getTeamColor() != turn)
+           {
+               throw new InvalidMoveException("Not a legal move");
+           }
            board.removePiece(startPosition);
            if(move.getPromotionPiece() != null)
            {
@@ -110,7 +148,7 @@ public class ChessGame
         {
             return false;
         }
-        Collection<ChessMove> moves = validMoves(startPosition);
+        Collection<ChessMove> moves = board.getPiece(startPosition).pieceMoves(board, startPosition);
         for(ChessMove validMove : moves)
         {
             if(move.equals(validMove))
@@ -207,14 +245,20 @@ public class ChessGame
             {
                 for (int col = 1; col <= 8; col++)
                 {
-                    Collection<ChessMove> moves = validMoves(new ChessPosition(row, col));
-                    for(ChessMove move : moves)
+                    if(board.getPiece(new ChessPosition(row, col)) != null)
                     {
-                        if(canMakeMove(move))
-                            return false;
+                        Collection<ChessMove> moves = validMoves(new ChessPosition(row, col));
+                        for (ChessMove move : moves)
+                        {
+                            if (canMakeMove(move))
+                            {
+                                return false;
+                            }
+                        }
                     }
                 }
             }
+            return true;
         }
         return false;
     }
@@ -228,22 +272,32 @@ public class ChessGame
      */
     public boolean isInStalemate(TeamColor teamColor)
     {
+        if(isInCheck((teamColor)))
+        {
+            return false;
+        }
         if(!isInCheck(teamColor))
         {
             for(int row = 1; row <= 8; row++)
             {
                 for (int col = 1; col <= 8; col++)
                 {
-                    Collection<ChessMove> moves = validMoves(new ChessPosition(row, col));
-                    for(ChessMove move : moves)
+                    if(board.getPiece(new ChessPosition(row, col)) != null)
                     {
-                        if(canMakeMove(move))
-                            return false;
+                        if(board.getPiece(new ChessPosition(row, col)).getTeamColor() == teamColor)
+                        {
+                            Collection<ChessMove> moves = validMoves(new ChessPosition(row, col));
+                            if (!moves.isEmpty())
+                            {
+                                return false;
+                            }
+                        }
                     }
                 }
             }
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**

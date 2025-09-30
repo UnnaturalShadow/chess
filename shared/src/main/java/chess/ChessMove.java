@@ -49,6 +49,14 @@ public class ChessMove
     }
 
     @Override
+    public String toString()
+    {
+        String str = "";
+        str += "(" + start.getRow() + ", " + start.getColumn() + ") (" + end.getRow() + ", " + end.getColumn() +")";
+        return str;
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(getStartPosition(), getEndPosition(), getPromotionPiece());
     }
