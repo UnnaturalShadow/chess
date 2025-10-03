@@ -13,8 +13,6 @@ import java.util.Objects;
  */
 public class ChessGame
 {
-
-
     private ChessBoard board;
     private TeamColor turn;
 
@@ -99,8 +97,6 @@ public class ChessGame
         return legalMoves;
     }
 
-
-
     /**
      * Makes a move in a chess game
      *
@@ -109,10 +105,10 @@ public class ChessGame
      */
     public void makeMove(ChessMove move) throws InvalidMoveException
     {
+        ChessPosition startPosition = move.getStartPosition();
+        ChessPiece toMove = board.getPiece(startPosition);
        if(canMakeMove(move))
        {
-           ChessPosition startPosition = move.getStartPosition();
-           ChessPiece toMove = board.getPiece(startPosition);
            if(toMove.getTeamColor() != turn)
            {
                throw new InvalidMoveException("Not a legal move");
@@ -129,6 +125,20 @@ public class ChessGame
 
            changeTurn();
            return;
+       }
+       else if(canCastleLeft(turn) && getKingPosition(turn).equals(move.getStartPosition()) && move.getEndPosition().equals(new ChessPosition(1,3)))
+       {
+           board.removePiece(startPosition);
+           board.addPiece(move.getEndPosition(), toMove);
+           board.removePiece(new ChessPosition(1,1));
+           board.addPiece(new ChessPosition(1, 4), new ChessPiece(turn, ChessPiece.PieceType.ROOK));
+       }
+       else if(canCastleRight(turn) && getKingPosition(turn).equals(move.getStartPosition()) && move.getEndPosition().equals(new ChessPosition(1,7)))
+       {
+           board.removePiece(startPosition);
+           board.addPiece(move.getEndPosition(), toMove);
+           board.removePiece(new ChessPosition(1,8));
+           board.addPiece(new ChessPosition(1, 6), new ChessPiece(turn, ChessPiece.PieceType.ROOK));
        }
        throw new InvalidMoveException("Not a legal move");
     }
@@ -231,7 +241,7 @@ public class ChessGame
                     //left side castle
                     if(board.getPiece(new ChessPosition(1,1)).getPieceType() == ChessPiece.PieceType.ROOK)
                     {
-                        for(int i = 3; i <= 4; i++)
+                        for(int i = 2; i <= 4; i++)
                         {
                             if(board.getPiece(new ChessPosition(1, i)) == null)
                             {
@@ -258,7 +268,6 @@ public class ChessGame
         }
         return false;
     }
-
 
     /**
      * Determines if the given team is in check
