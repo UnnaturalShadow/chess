@@ -126,20 +126,20 @@ public class ChessGame
            changeTurn();
            return;
        }
-       else if(canCastleLeft(turn) && getKingPosition(turn).equals(move.getStartPosition()) && move.getEndPosition().equals(new ChessPosition(1,3)))
-       {
-           board.removePiece(startPosition);
-           board.addPiece(move.getEndPosition(), toMove);
-           board.removePiece(new ChessPosition(1,1));
-           board.addPiece(new ChessPosition(1, 4), new ChessPiece(turn, ChessPiece.PieceType.ROOK));
-       }
-       else if(canCastleRight(turn) && getKingPosition(turn).equals(move.getStartPosition()) && move.getEndPosition().equals(new ChessPosition(1,7)))
-       {
-           board.removePiece(startPosition);
-           board.addPiece(move.getEndPosition(), toMove);
-           board.removePiece(new ChessPosition(1,8));
-           board.addPiece(new ChessPosition(1, 6), new ChessPiece(turn, ChessPiece.PieceType.ROOK));
-       }
+//       else if(canCastleLeft(turn) && getKingPosition(turn).equals(move.getStartPosition()) && move.getEndPosition().equals(new ChessPosition(1,3)))
+//       {
+//           board.removePiece(startPosition);
+//           board.addPiece(move.getEndPosition(), toMove);
+//           board.removePiece(new ChessPosition(1,1));
+//           board.addPiece(new ChessPosition(1, 4), new ChessPiece(turn, ChessPiece.PieceType.ROOK));
+//       }
+//       else if(canCastleRight(turn) && getKingPosition(turn).equals(move.getStartPosition()) && move.getEndPosition().equals(new ChessPosition(1,7)))
+//       {
+//           board.removePiece(startPosition);
+//           board.addPiece(move.getEndPosition(), toMove);
+//           board.removePiece(new ChessPosition(1,8));
+//           board.addPiece(new ChessPosition(1, 6), new ChessPiece(turn, ChessPiece.PieceType.ROOK));
+//       }
        throw new InvalidMoveException("Not a legal move");
     }
 
