@@ -94,6 +94,8 @@ public class ChessGame
 //                System.out.println(move);
             }
         }
+
+        //castling moves logic. For the sake of simplicity castling is considered a king move only
         return legalMoves;
     }
 
@@ -174,6 +176,84 @@ public class ChessGame
                 board.addPiece(move.getEndPosition(), killed);
                 board.addPiece(move.getStartPosition(), toMove);
                 return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean canCastleRight(TeamColor teamColor)
+    {
+        if (teamColor == TeamColor.WHITE)
+        {
+            if (getKingPosition(teamColor).equals(new ChessPosition(1, 5)))
+            {
+                if(!isInCheck(teamColor))
+                {
+                    //right side castle
+                    if(board.getPiece(new ChessPosition(1,8)).getPieceType() == ChessPiece.PieceType.ROOK)
+                    {
+                        for(int i = 6; i <= 7; i++)
+                        {
+                            if(board.getPiece(new ChessPosition(1, i)) == null)
+                            {
+                                chess.ChessPosition ogPos = getKingPosition(teamColor);
+                                board.addPiece(new ChessPosition(1, i), board.getPiece(ogPos));
+                                if(isInCheck(teamColor))
+                                {
+                                    board.addPiece(ogPos, board.getPiece(new ChessPosition(1, i)));
+                                    board.removePiece(new ChessPosition(1, i));
+                                    return false;
+                                }
+                                board.addPiece(ogPos, board.getPiece(new ChessPosition(1, i)));
+                                board.removePiece(new ChessPosition(1, i));
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean canCastleLeft(TeamColor teamColor)
+    {
+        if (teamColor == TeamColor.WHITE)
+        {
+            if (getKingPosition(teamColor).equals(new ChessPosition(1, 5)))
+            {
+                if(!isInCheck(teamColor))
+                {
+                    //left side castle
+                    if(board.getPiece(new ChessPosition(1,1)).getPieceType() == ChessPiece.PieceType.ROOK)
+                    {
+                        for(int i = 3; i <= 4; i++)
+                        {
+                            if(board.getPiece(new ChessPosition(1, i)) == null)
+                            {
+                                chess.ChessPosition ogPos = getKingPosition(teamColor);
+                                board.addPiece(new ChessPosition(1, i), board.getPiece(ogPos));
+                                if(isInCheck(teamColor))
+                                {
+                                    board.addPiece(ogPos, board.getPiece(new ChessPosition(1, i)));
+                                    board.removePiece(new ChessPosition(1, i));
+                                    return false;
+                                }
+                                board.addPiece(ogPos, board.getPiece(new ChessPosition(1, i)));
+                                board.removePiece(new ChessPosition(1, i));
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
             }
         }
         return false;
