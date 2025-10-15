@@ -1,4 +1,4 @@
-package passoff.chess;
+package passoff;
 
 import chess.ChessBoard;
 import chess.ChessGame;
@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 public class ChessBoardTests extends EqualsTestingUtility<ChessBoard> {
     public ChessBoardTests() {

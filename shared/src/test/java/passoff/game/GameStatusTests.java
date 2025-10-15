@@ -1,10 +1,10 @@
-package passoff.chess.game;
+package passoff.game;
 
 import chess.ChessGame;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import passoff.chess.TestUtilities;
+import passoff.TestUtilities;
 
 public class GameStatusTests {
     static final String INCORRECT_BLACK_CHECK = "Black is not in check but isInCheck returned true";
