@@ -1,13 +1,16 @@
 package dataaccess;
 
+import dataaccess.exceptions.AlreadyTakenException;
 import model.GameData;
-import java.util.Collection;
+import requestobjects.CreateRequest;
+import requestobjects.JoinRequest;
 
-public interface GameDAO
-{
-    void clear() throws DataAccessException;
-    GameData createGame(GameData game) throws DataAccessException;
-    GameData getGame(int gameID) throws DataAccessException;
-    Collection<GameData> listGames() throws DataAccessException;
-    void updateGame(GameData game) throws DataAccessException;
+import java.util.List;
+
+public interface GameDAO extends DAO {
+    int create(CreateRequest request) throws DataAccessException;
+    GameData getGame(int gameID);
+    List<GameData> list();
+    void join(JoinRequest request, String username) throws AlreadyTakenException;
+    void clear();
 }
