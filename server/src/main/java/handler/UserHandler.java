@@ -1,44 +1,64 @@
 package handler;
 
-import io.javalin.http.Context;
 import com.google.gson.Gson;
-import model.UserData;
+import dataaccess.DataAccessException;
+//import dataaccess.exceptions.AlreadyTakenException;
+//import dataaccess.exceptions.BadRequestException;
+//import dataaccess.exceptions.UserNotValidatedException;
+import io.javalin.http.Context;
+import requestobjects.LoginRequest;
+import requestobjects.LoginResult;
+import requestobjects.RegisterRequest;
+import requestobjects.RegisterResult;
 import service.UserService;
-import model.AuthData;
+
+import static server.Server.buildJson;
+import static server.Server.setErrorContext;
 
 public class UserHandler
 {
-
-    private final UserService userService;
-    private final Gson gson = new Gson();
-
+    UserService userService;
+    Gson serializer = new Gson();
     public UserHandler(UserService userService)
     {
         this.userService = userService;
     }
 
-    // This method will handle POST /user
-    public void registerUser(Context ctx)
+    public void clear(Context context)
+    {
+        userService.clear();
+        context.result("{}");
+    }
+
+    public void create(Context context)
     {
         try
         {
-            // Javalin provides the Context automatically when the endpoint is called
-            String body = ctx.body();
-            UserData userData = gson.fromJson(body, UserData.class);
-
-            AuthData result = userService.register(userData);
-            ctx.result(new Gson().toJson(result));  // convert Java object → JSON string manually
-            ctx.contentType("application/json");    // tell the client it’s JSON
-            ctx.status(200);
+            RegisterResult result = userService.register(serializer.fromJson(context.body(), RegisterRequest.class));
+            context.result(buildJson("username", result.username(), "authToken", result.authToken()));
         }
-        catch (Exception e)
+        catch (DataAccessException e)
         {
-            ctx.result(gson.toJson(new ErrorResponse("Error: " + e.getMessage())));
-            ctx.contentType("application/json");
-            ctx.status(400);
+            setErrorContext(context, "403 Already Taken Error: Username already taken.", 403);
+//        } catch (DataAccessException e) {
+//            setErrorContext(context,"500 Data Access Error: Failed to create new user", 500);
+//        } catch (DataAccessException e) {
+//            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
         }
     }
 
-    // Error response helper
-    private record ErrorResponse(String message) {}
+    public void login(Context context)
+    {
+        try
+        {
+            LoginResult result = userService.login(serializer.fromJson(context.body(), LoginRequest.class));
+            context.result(buildJson("username", result.username(), "authToken", result.authToken()));
+        }
+        catch (DataAccessException e)
+        {
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
+//        } catch (UserNotValidatedException e) {
+//            setErrorContext(context, "401 Unauthorized Error: User could not be logged in", 401);
+        }
+    }
 }
