@@ -1,40 +1,58 @@
 package service;
 
-import dataaccess.*;
-import model.AuthData;
+import dataaccess.DAOCollection;
+import dataaccess.DataAccessException;
+//import dataaccess.exceptions.AlreadyTakenException;
+//import dataaccess.exceptions.BadRequestException;
+//import dataaccess.exceptions.UserNotValidatedException;
 import model.UserData;
+import requestobjects.LoginRequest;
+import requestobjects.LoginResult;
+import requestobjects.RegisterRequest;
+import requestobjects.RegisterResult;
 
-import java.util.UUID;
-
-public class UserService
+public class UserService extends Service
 {
-    private final UserDAO userDAO;
-    private final AuthDAO authDAO;
-
-    public UserService(UserDAO userDAO, AuthDAO authDAO)
+    public DAOCollection DAOs;
+    public AuthService authService;
+    public UserService(DAOCollection DAOs)
     {
-        this.userDAO = userDAO;
-        this.authDAO = authDAO;
+        this.DAOs = DAOs;
+        authService = new AuthService(DAOs);
     }
 
-    public AuthData register(UserData user) throws DataAccessException
+    public void clear()
     {
-        if(user.username() == null || user.password() == null || user.email() == null)
+        this.DAOs.userDAO.clear();
+    }
+
+    public RegisterResult register(RegisterRequest request)
+            throws DataAccessException
+    {
+        checkForBadRequest(request.username(), request.password(), request.email());
+        UserData user = new UserData(request.username(), request.password(), request.email());
+
+
+        if (DAOs.userDAO.getUser(user.username()) != null)
         {
-            throw new DataAccessException("Error: bad request");
+            throw new DataAccessException("Username " + user.username() + " already exists");
         }
 
-        if (userDAO.getUser(user.username()) != null)
+        DAOs.userDAO.createUser(user);
+        String token = authService.generateNewToken(user.username());
+        return new RegisterResult(request.username(), token);
+    }
+
+    public LoginResult login(LoginRequest request) throws DataAccessException
+    {
+        checkForBadRequest(request.username(), request.password());
+
+        if (!DAOs.userDAO.validateWithPassword(request.username(), request.password()))
         {
-            throw new DataAccessException("Error: already taken");
+            throw new DataAccessException("Error: unauthorized");
         }
 
-        userDAO.insertUser(user);
-
-        String authToken = UUID.randomUUID().toString();
-        AuthData authData = new AuthData(authToken, user.username());
-        authDAO.createAuth(authData);
-
-        return authData;
+        String token = authService.generateNewToken(request.username());
+        return new LoginResult(request.username(), token);
     }
 }
