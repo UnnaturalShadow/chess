@@ -1,13 +1,9 @@
 package dataaccess;
 
-import model.AuthData;
-import java.util.Collection;
-
-public interface AuthDAO
+public interface AuthDAO extends DAO
 {
-    void clear() throws DataAccessException;
-    AuthData createAuth(AuthData auth) throws DataAccessException;
-    AuthData getAuth(String authToken) throws DataAccessException;
-    void deleteAuth(String authToken) throws DataAccessException;
-    Collection<AuthData> listAuths() throws DataAccessException;
+    void addAuthToken(String username, String token);
+    String authenticateToken(String token);
+    void remove(String token) throws DataAccessException;
+    void clear();
 }
