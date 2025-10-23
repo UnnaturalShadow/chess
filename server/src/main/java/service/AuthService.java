@@ -26,10 +26,14 @@ public class AuthService extends Service
         return newToken;
     }
 
-    public void logout(String token) throws DataAccessException, UserNotValidatedException
-    {
-        if (daos.authDao.authenticateToken(token) == null)
-        {throw new UserNotValidatedException("Not validated");}
+    public void logout(String token) throws UserNotValidatedException {
+        // Token missing or invalid
+        if (token == null || daos.authDao.authenticateToken(token) == null) {
+            throw new UserNotValidatedException("Not validated");
+        }
+
+        // Safe to remove; LocalAuthDao never throws DataAccessException
         daos.authDao.remove(token);
     }
+
 }

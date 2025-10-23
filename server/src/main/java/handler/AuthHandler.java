@@ -17,19 +17,15 @@ public class AuthHandler
 
     public void logout(Context context) {
         String token = context.header("authorization");
-        if (token == null || token.isEmpty()) {
-            setErrorContext(context, "401 Unauthorized Error: No token supplied", 401);
-            return;
-        }
 
         try {
             authService.logout(token);
-            context.status(200); // Optional: indicate success
+            context.status(200); // Success
         } catch (UserNotValidatedException e) {
-            // Invalid token
+            // Invalid or missing token → 401
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
-        } catch (DataAccessException e) {
-            // Internal error
+        } catch (Exception e) {
+            // Unexpected errors → 500
             setErrorContext(context, "500 Error: An internal error occurred", 500);
         }
     }
