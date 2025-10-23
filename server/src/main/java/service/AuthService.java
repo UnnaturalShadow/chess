@@ -8,10 +8,10 @@ import java.util.UUID;
 
 public class AuthService extends Service
 {
-    public DaoCollection DAOs;
-    public AuthService(DaoCollection DAOs)
+    public DaoCollection daos;
+    public AuthService(DaoCollection daos)
     {
-        this.DAOs = DAOs;
+        this.daos = daos;
     }
 
     public String generateNewToken(String username)
@@ -22,16 +22,16 @@ public class AuthService extends Service
         }
         String newToken = UUID.randomUUID().toString();
 
-        this.DAOs.authDao.addAuthToken(username, newToken);
+        this.daos.authDao.addAuthToken(username, newToken);
         return newToken;
     }
 
     public void logout(String token) throws DataAccessException
     {
-        if (DAOs.authDao.authenticateToken(token) == null)
+        if (daos.authDao.authenticateToken(token) == null)
         {
             throw new UserNotValidatedException("Not validated");
         }
-        DAOs.authDao.remove(token);
+        daos.authDao.remove(token);
     }
 }
