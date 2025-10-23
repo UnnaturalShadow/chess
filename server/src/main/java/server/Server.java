@@ -4,7 +4,7 @@ import handler.AuthHandler;
 import handler.GameHandler;
 import handler.UserHandler;
 import com.google.gson.Gson;
-import dataaccess.DAOCollection;
+import dataaccess.DaoCollection;
 import io.javalin.*;
 import io.javalin.http.Context;
 import service.AppService;
@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class Server {
     private final Javalin javalin;
-    DAOCollection DAOs = new DAOCollection();
+    DaoCollection DAOs = new DaoCollection();
     AuthService authService = new AuthService(DAOs);
     AuthHandler authHandler = new AuthHandler(authService);
     UserService userService = new UserService(DAOs);

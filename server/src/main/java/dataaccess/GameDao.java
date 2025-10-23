@@ -7,7 +7,7 @@ import requestobjects.JoinRequest;
 
 import java.util.List;
 
-public interface GameDao extends dao
+public interface GameDao extends Dao
 {
     int create(CreateRequest request) throws DataAccessException;
     GameData getGame(int gameID);

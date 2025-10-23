@@ -1,5 +1,5 @@
 package service;
-import dataaccess.DAOCollection;
+import dataaccess.DaoCollection;
 import dataaccess.DataAccessException;
 import dataaccess.exceptions.BadRequestException;
 import dataaccess.exceptions.UserNotValidatedException;
@@ -8,8 +8,8 @@ import java.util.UUID;
 
 public class AuthService extends Service
 {
-    public DAOCollection DAOs;
-    public AuthService(DAOCollection DAOs)
+    public DaoCollection DAOs;
+    public AuthService(DaoCollection DAOs)
     {
         this.DAOs = DAOs;
     }
@@ -22,16 +22,16 @@ public class AuthService extends Service
         }
         String newToken = UUID.randomUUID().toString();
 
-        this.DAOs.authDAO.addAuthToken(username, newToken);
+        this.DAOs.authDao.addAuthToken(username, newToken);
         return newToken;
     }
 
     public void logout(String token) throws DataAccessException
     {
-        if (DAOs.authDAO.authenticateToken(token) == null)
+        if (DAOs.authDao.authenticateToken(token) == null)
         {
             throw new UserNotValidatedException("Not validated");
         }
-        DAOs.authDAO.remove(token);
+        DAOs.authDao.remove(token);
     }
 }

@@ -1,18 +1,19 @@
 package service;
 
-import dataaccess.DAOCollection;
+import dataaccess.DaoCollection;
 import io.javalin.http.Context;
 
 public class AppService extends Service{
-    public DAOCollection DAOs;
+    public DaoCollection daos;
 
-    public AppService(DAOCollection DAOs) {
-        this.DAOs = DAOs;
+    public AppService(DaoCollection daos) {
+        this.daos = daos;
     }
 
     public void clear(Context context) {
-        this.DAOs.userDAO.clear();
-        this.DAOs.authDAO.clear();
-        this.DAOs.gameDAO.clear();
+        this.daos.userDao.clear();
+        this.daos.authDao.clear();
+        this.daos.gameDao.clear();
     }
 }
+

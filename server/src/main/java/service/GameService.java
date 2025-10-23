@@ -1,6 +1,6 @@
 package service;
 
-import dataaccess.DAOCollection;
+import dataaccess.DaoCollection;
 import dataaccess.DataAccessException;
 import dataaccess.exceptions.AlreadyTakenException;
 import dataaccess.exceptions.BadRequestException;
@@ -15,46 +15,46 @@ import java.util.Objects;
 
 public class GameService extends Service
 {
-    DAOCollection DAOs;
-    public GameService(DAOCollection DAOs)
+    DaoCollection daos;
+    public GameService(DaoCollection daos)
     {
-        this.DAOs = DAOs;
+        this.daos = daos;
     }
 
     public ListResult list(String token) throws DataAccessException
     {
-        if(DAOs.authDAO.authenticateToken(token) == null){throw new DataAccessException("Not validated");}
+        if(daos.authDao.authenticateToken(token) == null){throw new DataAccessException("Not validated");}
 
-        return new ListResult(DAOs.gameDAO.list());
+        return new ListResult(daos.gameDao.list());
     }
 
     public CreateResult create(String token, CreateRequest request) throws DataAccessException, BadRequestException
     {
-        if(DAOs.authDAO.authenticateToken(token) == null)
+        if(daos.authDao.authenticateToken(token) == null)
         {
             throw new UserNotValidatedException("Not validated");
         }
         checkForBadRequest(request.gameName());
 
-        int id = DAOs.gameDAO.create(request);
+        int id = daos.gameDao.create(request);
 
         return new CreateResult(id);
     }
 
     public void join(String token, JoinRequest request) throws UserNotValidatedException, AlreadyTakenException
     {
-        String username = DAOs.authDAO.authenticateToken(token);
+        String username = daos.authDao.authenticateToken(token);
 
         if(username == null)
         {
             throw new UserNotValidatedException("Not validated");
         }
-        checkForBadRequest(request.playerColor(), request.gameID(), DAOs.gameDAO.getGame(request.gameID()));
+        checkForBadRequest(request.playerColor(), request.gameID(), daos.gameDao.getGame(request.gameID()));
         if(!Objects.equals(request.playerColor(), "WHITE") && !Objects.equals(request.playerColor(), "BLACK"))
         {
             throw new NotAValidColorException("Not a valid color");
         }
 
-        DAOs.gameDAO.join(request, username);
+        daos.gameDao.join(request, username);
     }
 }

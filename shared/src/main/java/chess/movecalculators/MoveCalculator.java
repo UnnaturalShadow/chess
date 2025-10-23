@@ -17,12 +17,6 @@ public class MoveCalculator
     ChessPiece piece;
     ArrayList<ChessMove> moves = new ArrayList<>();
 
-    /**
-     * Constructor for the class, requires an existing ChessBoard
-     * and a position on that board to calculate moves for
-     * @param board The board that moves are calculated for
-     * @param position The position on that board that moves are calculated from
-     */
     MoveCalculator(ChessBoard board, ChessPosition position)
     {
         this.position = position;
@@ -30,42 +24,51 @@ public class MoveCalculator
         this.piece = board.getPiece(position);
     }
 
-    /**
-     * Based on the given board and position the piece type is calculated
-     * and a MoveCalculator of the correct subclass is created to calculate
-     * the moves specific to that piece.
-     * @param board The board that moves are calculated for
-     * @param position The position on that board that moves are calculated from
-     * @return a subclass of MoveCalculator specified to the given piece.
-     */
     public static MoveCalculator getMoveCalculator(ChessBoard board, ChessPosition position)
     {
         ChessPiece piece = board.getPiece(position);
         ChessPiece.PieceType type = piece.getPieceType();
 
-        if (type == ChessPiece.PieceType.ROOK) return new RookMoveCalculator(board, position);
-        else if (type == ChessPiece.PieceType.KNIGHT) return new KnightMoveCalculator(board, position);
-        else if (type == ChessPiece.PieceType.BISHOP) return new BishopMoveCalculator(board, position);
-        else if (type == ChessPiece.PieceType.QUEEN) return new QueenMoveCalculator(board, position);
-        else if (type == ChessPiece.PieceType.KING) return new KingMoveCalculator(board, position);
-        else if (type == ChessPiece.PieceType.PAWN) return new PawnMoveCalculator(board, position);
+        if (type == ChessPiece.PieceType.ROOK)
+        {
+            return new RookMoveCalculator(board, position);
+        }
+        else if (type == ChessPiece.PieceType.KNIGHT)
+        {
+            return new KnightMoveCalculator(board, position);
+        }
+        else if (type == ChessPiece.PieceType.BISHOP)
+        {
+            return new BishopMoveCalculator(board, position);
+        }
+        else if (type == ChessPiece.PieceType.QUEEN)
+        {
+            return new QueenMoveCalculator(board, position);
+        }
+        else if (type == ChessPiece.PieceType.KING)
+        {
+            return new KingMoveCalculator(board, position);
+        }
+        else if (type == ChessPiece.PieceType.PAWN)
+        {
+            return new PawnMoveCalculator(board, position);
+        }
 
         return null;
     }
 
-    /**
-     * Returns the moves array containing the list of valid moves
-     * @return the ArrayList of ChessMoves moves
-     */
     public Collection<ChessMove> returnMoves()
     {
         return moves;
     }
 
-    // Helper method to handle movement in a single direction
+    // Consolidates repeated collision logic
     private boolean handleCollisionOrAdd(int r, int c)
     {
-        if (!inBounds(r, c)) return true;
+        if (!inBounds(r, c))
+        {
+            return true;
+        }
 
         ChessPiece target = board.getPiece(new ChessPosition(r, c));
         if (target != null)
@@ -74,13 +77,11 @@ public class MoveCalculator
             {
                 moves.add(new ChessMove(position, new ChessPosition(r, c), null));
             }
-            return true; // Stop further movement in this direction
+            return true; // Stop movement in this direction
         }
-        else
-        {
-            moves.add(new ChessMove(position, new ChessPosition(r, c), null));
-            return false; // Can continue
-        }
+
+        moves.add(new ChessMove(position, new ChessPosition(r, c), null));
+        return false; // Can continue
     }
 
     public void straightMoves()
@@ -88,14 +89,37 @@ public class MoveCalculator
         int row = position.getRow();
         int col = position.getColumn();
 
-        // Up
-        for (int r = row + 1; r <= 8; r++) if (handleCollisionOrAdd(r, col)) break;
-        // Down
-        for (int r = row - 1; r >= 1; r--) if (handleCollisionOrAdd(r, col)) break;
-        // Right
-        for (int c = col + 1; c <= 8; c++) if (handleCollisionOrAdd(row, c)) break;
-        // Left
-        for (int c = col - 1; c >= 1; c--) if (handleCollisionOrAdd(row, c)) break;
+        for (int r = row + 1; r <= 8; r++)
+        {
+            if (handleCollisionOrAdd(r, col))
+            {
+                break;
+            }
+        }
+
+        for (int r = row - 1; r >= 1; r--)
+        {
+            if (handleCollisionOrAdd(r, col))
+            {
+                break;
+            }
+        }
+
+        for (int c = col + 1; c <= 8; c++)
+        {
+            if (handleCollisionOrAdd(row, c))
+            {
+                break;
+            }
+        }
+
+        for (int c = col - 1; c >= 1; c--)
+        {
+            if (handleCollisionOrAdd(row, c))
+            {
+                break;
+            }
+        }
     }
 
     public void diagonalMoves()
@@ -103,14 +127,37 @@ public class MoveCalculator
         int row = position.getRow();
         int col = position.getColumn();
 
-        // Top-right
-        for (int r = row + 1, c = col + 1; r <= 8 && c <= 8; r++, c++) if (handleCollisionOrAdd(r, c)) break;
-        // Top-left
-        for (int r = row + 1, c = col - 1; r <= 8 && c >= 1; r++, c--) if (handleCollisionOrAdd(r, c)) break;
-        // Bottom-right
-        for (int r = row - 1, c = col + 1; r >= 1 && c <= 8; r--, c++) if (handleCollisionOrAdd(r, c)) break;
-        // Bottom-left
-        for (int r = row - 1, c = col - 1; r >= 1 && c >= 1; r--, c--) if (handleCollisionOrAdd(r, c)) break;
+        for (int r = row + 1, c = col + 1; r <= 8 && c <= 8; r++, c++)
+        {
+            if (handleCollisionOrAdd(r, c))
+            {
+                break;
+            }
+        }
+
+        for (int r = row + 1, c = col - 1; r <= 8 && c >= 1; r++, c--)
+        {
+            if (handleCollisionOrAdd(r, c))
+            {
+                break;
+            }
+        }
+
+        for (int r = row - 1, c = col + 1; r >= 1 && c <= 8; r--, c++)
+        {
+            if (handleCollisionOrAdd(r, c))
+            {
+                break;
+            }
+        }
+
+        for (int r = row - 1, c = col - 1; r >= 1 && c >= 1; r--, c--)
+        {
+            if (handleCollisionOrAdd(r, c))
+            {
+                break;
+            }
+        }
     }
 
     public void pawnMoves()
@@ -124,27 +171,39 @@ public class MoveCalculator
         int promoRow = (color == ChessGame.TeamColor.WHITE) ? 8 : 1;
 
         int forwardRow = r + dir;
+
         // one step forward
-        if (inBounds(forwardRow, c) && board.getPiece(new ChessPosition(forwardRow, c)) == null)
+        if (inBounds(forwardRow, c))
         {
-            addPawnPromotionMoves(forwardRow, c, promoRow);
+            if (board.getPiece(new ChessPosition(forwardRow, c)) == null)
+            {
+                addPawnPromotionMoves(forwardRow, c, promoRow);
+            }
         }
 
         // two steps forward
         int doubleRow = r + 2 * dir;
-        if (r == startRow && board.getPiece(new ChessPosition(forwardRow, c)) == null &&
-                board.getPiece(new ChessPosition(doubleRow, c)) == null)
+        if (r == startRow)
         {
-            moves.add(new ChessMove(position, new ChessPosition(doubleRow, c), null));
+            if (board.getPiece(new ChessPosition(forwardRow, c)) == null)
+            {
+                if (board.getPiece(new ChessPosition(doubleRow, c)) == null)
+                {
+                    moves.add(new ChessMove(position, new ChessPosition(doubleRow, c), null));
+                }
+            }
         }
 
         // diagonal captures
         for (int dc : new int[]{-1, 1})
         {
             int captureCol = c + dc;
-            if (inBounds(forwardRow, captureCol) && isEnemyPiece(forwardRow, captureCol, piece))
+            if (inBounds(forwardRow, captureCol))
             {
-                addPawnPromotionMoves(forwardRow, captureCol, promoRow);
+                if (isEnemyPiece(forwardRow, captureCol, piece))
+                {
+                    addPawnPromotionMoves(forwardRow, captureCol, promoRow);
+                }
             }
         }
     }
@@ -189,17 +248,6 @@ public class MoveCalculator
                 }
             }
         }
-    }
-
-    // Utility methods
-    public boolean checkCollision(int row, int col)
-    {
-        return this.board.getPiece(new ChessPosition(row, col)) != null;
-    }
-
-    public ChessGame.TeamColor getColor(int row, int col)
-    {
-        return this.board.getPiece(new ChessPosition(row, col)).getTeamColor();
     }
 
     private boolean inBounds(int row, int col)

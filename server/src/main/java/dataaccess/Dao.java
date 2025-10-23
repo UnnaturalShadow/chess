@@ -1,5 +1,5 @@
 package dataaccess;
 
-public interface dao
+public interface Dao
 {
 }
