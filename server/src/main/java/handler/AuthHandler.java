@@ -17,9 +17,17 @@ public class AuthHandler
 
     public void logout(Context context)
     {
+        String authHeader = context.header("authorization");
+
+        if (authHeader == null || authHeader.isEmpty())
+        {
+            setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
+            return;
+        }
+
         try
         {
-            authService.logout(context.header("authorization"));
+            authService.logout(authHeader);
         }
         catch (DataAccessException e)
         {
