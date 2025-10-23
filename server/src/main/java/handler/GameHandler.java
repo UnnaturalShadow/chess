@@ -17,71 +17,47 @@ import io.javalin.http.Context;
 import static server.Server.buildJson;
 import static server.Server.setErrorContext;
 
-public class GameHandler
-{
+public class GameHandler {
     GameService gameService;
     Gson serializer = new Gson();
-    public GameHandler(GameService gameService)
-    {
+    public GameHandler(GameService gameService) {
         this.gameService = gameService;
     }
 
-    public void list(Context context)
-    {
-        try
-        {
+    public void list(Context context) {
+        try {
             ListResult result = gameService.list(context.header("authorization"));
             context.result(buildJson("games", result.games()));
-        }
-        catch (DataAccessException e)
-        {
+        } catch (UserNotValidatedException e) {
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
         }
     }
 
     public void create(Context context) {
         try {
-            CreateRequest request = serializer.fromJson(context.body(), CreateRequest.class);
             CreateResult result = gameService.create(
-                    context.header("authorization"), request
+                    context.header("authorization"), serializer.fromJson(context.body(), CreateRequest.class)
             );
             context.result(buildJson("gameID", result.gameID()));
-            context.status(200);
-
         } catch (UserNotValidatedException e) {
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
-
-        } catch (BadRequestException e) {
-            setErrorContext(context, "400 Bad Request Error: Some field was missing", 400);
-
         } catch (DataAccessException e) {
-            setErrorContext(context, "500 Data Access Error: Failed to create new game", 500);
-
-        } catch (Exception e) {
-            // Catch-all for unexpected runtime errors
-            setErrorContext(context, "500 Internal Server Error", 500);
+            setErrorContext(context,"500 Data Access Error: Failed to create new game", 500);
+        } catch (BadRequestException e) {
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
         }
     }
 
-    public void join(Context context)
-    {
+    public void join(Context context){
         try {
             gameService.join(context.header("authorization"), serializer.fromJson(context.body(), JoinRequest.class));
-        }
-        catch (UserNotValidatedException e)
-        {
+        } catch (UserNotValidatedException e) {
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
-        }
-        catch (BadRequestException e)
-        {
+        } catch (BadRequestException e) {
             setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
-        }
-        catch (AlreadyTakenException e)
-        {
+        } catch (AlreadyTakenException e) {
             setErrorContext(context,"403 Bad Request Error: Color already taken", 403);
-        }
-        catch (NotAValidColorException e)
-        {
+        } catch (NotAValidColorException e) {
             setErrorContext(context,"400 Bad Request Error: Not a valid color", 400);
         }
     }

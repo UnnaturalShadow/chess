@@ -18,22 +18,22 @@ public class Server {
     private final Javalin javalin;
     DaoCollection daos = new DaoCollection();
     AuthService authService = new AuthService(daos);
-    AuthHandler authHandler = new AuthHandler(authService);
+    AuthHandler authHandlers = new AuthHandler(authService);
     UserService userService = new UserService(daos);
-    UserHandler userHandler = new UserHandler(userService);
+    UserHandler userHandlers = new UserHandler(userService);
     GameService gameService = new GameService(daos);
-    GameHandler gameHandler = new GameHandler(gameService);
+    GameHandler gameHandlers = new GameHandler(gameService);
 
     public Server() {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
         javalin.delete("/db", new AppService(daos)::clear)
-                .post("/user", userHandler::create)
-                .post("/session", userHandler::login)
-                .delete("/session", authHandler::logout)
-                .post("/game", gameHandler::create)
-                .get("/game", gameHandler::list)
-                .put("/game", gameHandler::join);
+                .post("/user", userHandlers::create)
+                .post("/session", userHandlers::login)
+                .delete("/session", authHandlers::logout)
+                .post("/game", gameHandlers::create)
+                .get("/game", gameHandlers::list)
+                .put("/game", gameHandlers::join);
     }
 
     public int run(int desiredPort) {
