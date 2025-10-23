@@ -25,7 +25,7 @@ public class Server {
     GameHandler gameHandler = new GameHandler(gameService);
 
     public Server() {
-        javalin = Javalin.create(config -> config.staticFiles.add("web"));
+        javalin = Javalin.create(config -> config.staticFiles.add("resources/web"));
 
         javalin.delete("/db", new AppService(daos)::clear)
                 .post("/user", userHandler::create)
