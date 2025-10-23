@@ -207,21 +207,41 @@ public class ChessGame
         {
             for (int col = 1; col <= 8; col++)
             {
-                ChessPosition pos = new ChessPosition(row, col);
-                if (board.getPiece(pos) != null)
+                if (canPieceEscape(row, col, teamColor))
                 {
-                    for (ChessMove move : validMoves(pos))
-                    {
-                        if (canMakeMove(move))
-                        {
-                            return false;
-                        }
-                    }
+                    return false;
                 }
             }
         }
 
         return true;
+    }
+
+    private boolean canPieceEscape(int row, int col, TeamColor teamColor)
+    {
+        ChessPosition pos = new ChessPosition(row, col);
+        ChessPiece piece = board.getPiece(pos);
+
+        if (piece == null || piece.getTeamColor() != teamColor)
+        {
+            return false;
+        }
+
+        Collection<ChessMove> moves = validMoves(pos);
+        if (moves == null)
+        {
+            return false;
+        }
+
+        for (ChessMove move : moves)
+        {
+            if (canMakeMove(move))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public boolean isInStalemate(TeamColor teamColor)
