@@ -1,8 +1,9 @@
 package dataaccess.local;
 
 import chess.ChessGame;
-import dataaccess.DataAccessException;
+//import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
+import dataaccess.exceptions.AlreadyTakenException;
 //import dataaccess.exceptions.AlreadyTakenException;
 import model.GameData;
 import requestobjects.CreateRequest;
@@ -41,7 +42,7 @@ public class LocalGameDAO implements GameDAO
         games = new HashMap<>();
     }
 
-    public void join(JoinRequest request, String username) throws DataAccessException
+    public void join(JoinRequest request, String username) throws AlreadyTakenException
     {
         GameData gameData = games.get(request.gameID());
         GameData newGame;
@@ -62,7 +63,7 @@ public class LocalGameDAO implements GameDAO
         else
         {
 //            throw new AlreadyTakenException("Color already taken");
-            throw new DataAccessException("Color already taken");
+            throw new AlreadyTakenException("Color already taken");
         }
         games.put(request.gameID(), newGame);
     }

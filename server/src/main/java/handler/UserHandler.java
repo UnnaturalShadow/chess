@@ -2,9 +2,9 @@ package handler;
 
 import com.google.gson.Gson;
 import dataaccess.DataAccessException;
-//import dataaccess.exceptions.AlreadyTakenException;
-//import dataaccess.exceptions.BadRequestException;
-//import dataaccess.exceptions.UserNotValidatedException;
+import dataaccess.exceptions.AlreadyTakenException;
+import dataaccess.exceptions.BadRequestException;
+import dataaccess.exceptions.UserNotValidatedException;
 import io.javalin.http.Context;
 import requestobjects.LoginRequest;
 import requestobjects.LoginResult;
@@ -37,13 +37,17 @@ public class UserHandler
             RegisterResult result = userService.register(serializer.fromJson(context.body(), RegisterRequest.class));
             context.result(buildJson("username", result.username(), "authToken", result.authToken()));
         }
-        catch (DataAccessException e)
+        catch (AlreadyTakenException e)
         {
             setErrorContext(context, "403 Already Taken Error: Username already taken.", 403);
-//        } catch (DataAccessException e) {
-//            setErrorContext(context,"500 Data Access Error: Failed to create new user", 500);
-//        } catch (DataAccessException e) {
-//            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
+        }
+        catch (DataAccessException e)
+        {
+            setErrorContext(context,"500 Data Access Error: Failed to create new user", 500);
+        }
+        catch (BadRequestException e)
+        {
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
         }
     }
 
@@ -54,11 +58,13 @@ public class UserHandler
             LoginResult result = userService.login(serializer.fromJson(context.body(), LoginRequest.class));
             context.result(buildJson("username", result.username(), "authToken", result.authToken()));
         }
-        catch (DataAccessException e)
+        catch (BadRequestException e)
         {
             setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
-//        } catch (UserNotValidatedException e) {
-//            setErrorContext(context, "401 Unauthorized Error: User could not be logged in", 401);
+        }
+        catch (UserNotValidatedException e)
+        {
+            setErrorContext(context, "401 Unauthorized Error: User could not be logged in", 401);
         }
     }
 }

@@ -2,17 +2,18 @@ package service;
 
 //import dataaccess.exceptions.BadRequestException;
 
-import dataaccess.DataAccessException;
+//import dataaccess.DataAccessException;
+import dataaccess.exceptions.BadRequestException;
 
 public class Service
 {
-    void checkForBadRequest(Object... requestFields) throws DataAccessException
+    void checkForBadRequest(Object... requestFields) throws BadRequestException
     {
         for (Object requestField: requestFields)
         {
             if (requestField == null)
             {
-                throw new DataAccessException("A field was missing");
+                throw new BadRequestException("A field was missing");
             }
         }
     }

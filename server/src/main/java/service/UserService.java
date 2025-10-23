@@ -2,9 +2,9 @@ package service;
 
 import dataaccess.DAOCollection;
 import dataaccess.DataAccessException;
-//import dataaccess.exceptions.AlreadyTakenException;
-//import dataaccess.exceptions.BadRequestException;
-//import dataaccess.exceptions.UserNotValidatedException;
+import dataaccess.exceptions.AlreadyTakenException;
+import dataaccess.exceptions.BadRequestException;
+import dataaccess.exceptions.UserNotValidatedException;
 import model.UserData;
 import requestobjects.LoginRequest;
 import requestobjects.LoginResult;
@@ -27,7 +27,7 @@ public class UserService extends Service
     }
 
     public RegisterResult register(RegisterRequest request)
-            throws DataAccessException
+            throws DataAccessException, AlreadyTakenException, BadRequestException
     {
         checkForBadRequest(request.username(), request.password(), request.email());
         UserData user = new UserData(request.username(), request.password(), request.email());
@@ -35,7 +35,7 @@ public class UserService extends Service
 
         if (DAOs.userDAO.getUser(user.username()) != null)
         {
-            throw new DataAccessException("Username " + user.username() + " already exists");
+            throw new AlreadyTakenException("Username " + user.username() + " already exists");
         }
 
         DAOs.userDAO.createUser(user);
@@ -43,13 +43,13 @@ public class UserService extends Service
         return new RegisterResult(request.username(), token);
     }
 
-    public LoginResult login(LoginRequest request) throws DataAccessException
+    public LoginResult login(LoginRequest request) throws UserNotValidatedException, BadRequestException
     {
         checkForBadRequest(request.username(), request.password());
 
         if (!DAOs.userDAO.validateWithPassword(request.username(), request.password()))
         {
-            throw new DataAccessException("Error: unauthorized");
+            throw new UserNotValidatedException("Error: unauthorized");
         }
 
         String token = authService.generateNewToken(request.username());

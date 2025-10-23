@@ -1,8 +1,8 @@
 package service;
 import dataaccess.DAOCollection;
 import dataaccess.DataAccessException;
-//import dataaccess.exceptions.BadRequestException;
-//import dataaccess.exceptions.UserNotValidatedException;
+import dataaccess.exceptions.BadRequestException;
+import dataaccess.exceptions.UserNotValidatedException;
 
 import java.util.UUID;
 
@@ -14,11 +14,11 @@ public class AuthService extends Service
         this.DAOs = DAOs;
     }
 
-    public String generateNewToken(String username) throws DataAccessException
+    public String generateNewToken(String username)
     {
         if (username == null)
         {
-            throw new DataAccessException("No username supplied");
+            throw new BadRequestException("No username supplied");
         }
         String newToken = UUID.randomUUID().toString();
 
@@ -30,7 +30,7 @@ public class AuthService extends Service
     {
         if (DAOs.authDAO.authenticateToken(token) == null)
         {
-            throw new DataAccessException("Not validated");
+            throw new UserNotValidatedException("Not validated");
         }
         DAOs.authDAO.remove(token);
     }

@@ -1,7 +1,7 @@
 package handler;
 
 import dataaccess.DataAccessException;
-//import dataaccess.exceptions.UserNotValidatedException;
+import dataaccess.exceptions.UserNotValidatedException;
 import io.javalin.http.Context;
 import service.AuthService;
 
@@ -25,9 +25,9 @@ public class AuthHandler
         {
             setErrorContext(context, "500 Error: An internal error occurred", 500);
         }
-//        catch (UserNotValidatedException e)
-//        {
-//            setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
-//        }
+        catch (UserNotValidatedException e)
+        {
+            setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
+        }
     }
 }

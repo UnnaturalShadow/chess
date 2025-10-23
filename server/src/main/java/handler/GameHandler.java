@@ -2,10 +2,10 @@ package handler;
 
 import com.google.gson.Gson;
 import dataaccess.DataAccessException;
-//import dataaccess.exceptions.AlreadyTakenException;
-//import dataaccess.exceptions.BadRequestException;
-//import dataaccess.exceptions.NotAValidColorException;
-//import dataaccess.exceptions.UserNotValidatedException;
+import dataaccess.exceptions.AlreadyTakenException;
+import dataaccess.exceptions.BadRequestException;
+import dataaccess.exceptions.NotAValidColorException;
+import dataaccess.exceptions.UserNotValidatedException;
 import requestobjects.CreateRequest;
 import requestobjects.CreateResult;
 import requestobjects.JoinRequest;
@@ -48,17 +48,17 @@ public class GameHandler
             );
             context.result(buildJson("gameID", result.gameID()));
         }
-//        catch (UserNotValidatedException e)
-//        {
-//            setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
-//        }
+        catch (UserNotValidatedException e)
+        {
+            setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
+        }
         catch (DataAccessException e) {
             setErrorContext(context,"500 Data Access Error: Failed to create new game", 500);
         }
-//        catch (BadRequestException e)
-//        {
-//            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
-//        }
+        catch (BadRequestException e)
+        {
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
+        }
     }
 
     public void join(Context context)
@@ -66,16 +66,21 @@ public class GameHandler
         try {
             gameService.join(context.header("authorization"), serializer.fromJson(context.body(), JoinRequest.class));
         }
-        catch (DataAccessException e)
+        catch (UserNotValidatedException e)
         {
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
         }
-//        catch (BadRequestException e) {
-//            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
-//        } catch (AlreadyTakenException e) {
-//            setErrorContext(context,"403 Bad Request Error: Color already taken", 403);
-//        } catch (NotAValidColorException e) {
-//            setErrorContext(context,"400 Bad Request Error: Not a valid color", 400);
-//        }
+        catch (BadRequestException e)
+        {
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
+        }
+        catch (AlreadyTakenException e)
+        {
+            setErrorContext(context,"403 Bad Request Error: Color already taken", 403);
+        }
+        catch (NotAValidColorException e)
+        {
+            setErrorContext(context,"400 Bad Request Error: Not a valid color", 400);
+        }
     }
 }
