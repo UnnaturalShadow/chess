@@ -16,18 +16,18 @@ import java.util.Map;
 
 public class Server {
     private final Javalin javalin;
-    DaoCollection DAOs = new DaoCollection();
-    AuthService authService = new AuthService(DAOs);
+    DaoCollection daos = new DaoCollection();
+    AuthService authService = new AuthService(daos);
     AuthHandler authHandler = new AuthHandler(authService);
-    UserService userService = new UserService(DAOs);
+    UserService userService = new UserService(daos);
     UserHandler userHandler = new UserHandler(userService);
-    GameService gameService = new GameService(DAOs);
+    GameService gameService = new GameService(daos);
     GameHandler gameHandler = new GameHandler(gameService);
 
     public Server() {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
-        javalin.delete("/db", new AppService(DAOs)::clear)
+        javalin.delete("/db", new AppService(daos)::clear)
                 .post("/user", userHandler::create)
                 .post("/session", userHandler::login)
                 .delete("/session", authHandler::logout)
