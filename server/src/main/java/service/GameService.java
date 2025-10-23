@@ -22,6 +22,7 @@ public class GameService extends Service
         this.daos = daos;
     }
 
+
     public ListResult list(String token) throws DataAccessException
     {
         if(daos.authDao.authenticateToken(token) == null){throw new UserNotValidatedException("Not validated");}
@@ -29,14 +30,18 @@ public class GameService extends Service
         return new ListResult(daos.gameDao.list());
     }
 
-    public CreateResult create(String token, CreateRequest request) throws DataAccessException, BadRequestException
-    {
-        if(daos.authDao.authenticateToken(token) == null)
-        {
+    public CreateResult create(String token, CreateRequest request)
+            throws UserNotValidatedException, DataAccessException, BadRequestException {
+
+        // Check token validity
+        if (daos.authDao.authenticateToken(token) == null) {
             throw new UserNotValidatedException("Not validated");
         }
+
+        // Check request
         checkForBadRequest(request.gameName());
 
+        // Create game via DAO
         int id = daos.gameDao.create(request);
 
         return new CreateResult(id);

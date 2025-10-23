@@ -1,10 +1,10 @@
 package dataaccess.local;
 
 import chess.ChessGame;
-//import dataaccess.DataAccessException;
+import dataaccess.DataAccessException;
 import dataaccess.GameDao;
 import dataaccess.exceptions.AlreadyTakenException;
-//import dataaccess.exceptions.AlreadyTakenException;
+import dataaccess.exceptions.AlreadyTakenException;
 import model.GameData;
 import requestobjects.CreateRequest;
 import requestobjects.JoinRequest;
@@ -16,15 +16,19 @@ public class LocalGameDao implements GameDao
     public Map<Integer, GameData> games = new HashMap<>();
     private int nextId = 1;
 
-    public int create(CreateRequest request)
-    {
-        GameData newGame = new GameData(
-                nextId, request.gameName(), null, null, new ChessGame()
-        );
-        games.put(nextId, newGame);
+    public int create(CreateRequest request) throws DataAccessException {
+        try {
+            GameData newGame = new GameData(
+                    nextId, request.gameName(), null, null, new ChessGame()
+            );
+            games.put(nextId, newGame);
 
-        nextId++;
-        return nextId-1;
+            nextId++;
+            return nextId - 1;
+        } catch (Exception e) {
+            // Wrap any unexpected runtime exception in a DataAccessException
+            throw new DataAccessException("Failed to create game", e);
+        }
     }
 
     public GameData getGame(int gameID)

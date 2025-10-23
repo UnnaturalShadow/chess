@@ -39,25 +39,27 @@ public class GameHandler
         }
     }
 
-    public void create(Context context)
-    {
-        try
-        {
+    public void create(Context context) {
+        try {
+            CreateRequest request = serializer.fromJson(context.body(), CreateRequest.class);
             CreateResult result = gameService.create(
-                    context.header("authorization"), serializer.fromJson(context.body(), CreateRequest.class)
+                    context.header("authorization"), request
             );
             context.result(buildJson("gameID", result.gameID()));
-        }
-        catch (UserNotValidatedException e)
-        {
+            context.status(200);
+
+        } catch (UserNotValidatedException e) {
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
-        }
-        catch (DataAccessException e) {
-            setErrorContext(context,"500 Data Access Error: Failed to create new game", 500);
-        }
-        catch (BadRequestException e)
-        {
-            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
+
+        } catch (BadRequestException e) {
+            setErrorContext(context, "400 Bad Request Error: Some field was missing", 400);
+
+        } catch (DataAccessException e) {
+            setErrorContext(context, "500 Data Access Error: Failed to create new game", 500);
+
+        } catch (Exception e) {
+            // Catch-all for unexpected runtime errors
+            setErrorContext(context, "500 Internal Server Error", 500);
         }
     }
 
