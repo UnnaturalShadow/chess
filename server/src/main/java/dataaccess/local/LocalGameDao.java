@@ -2,7 +2,7 @@ package dataaccess.local;
 
 import chess.ChessGame;
 //import dataaccess.DataAccessException;
-import dataaccess.GameDAO;
+import dataaccess.GameDao;
 import dataaccess.exceptions.AlreadyTakenException;
 //import dataaccess.exceptions.AlreadyTakenException;
 import model.GameData;
@@ -11,7 +11,7 @@ import requestobjects.JoinRequest;
 
 import java.util.*;
 
-public class LocalGameDAO implements GameDAO
+public class LocalGameDao implements GameDao
 {
     public Map<Integer, GameData> games = new HashMap<>();
     private int nextId = 1;

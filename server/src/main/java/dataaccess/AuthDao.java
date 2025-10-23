@@ -1,6 +1,6 @@
 package dataaccess;
 
-public interface AuthDAO extends DAO
+public interface AuthDao extends dao
 {
     void addAuthToken(String username, String token);
     String authenticateToken(String token);

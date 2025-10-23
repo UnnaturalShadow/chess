@@ -1,11 +1,11 @@
 package dataaccess.local;
 
-import dataaccess.AuthDAO;
+import dataaccess.AuthDao;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class LocalAuthDAO implements AuthDAO
+public class LocalAuthDao implements AuthDao
 {
     public Map<String, String> authTokens = new HashMap<>();
 

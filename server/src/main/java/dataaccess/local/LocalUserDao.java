@@ -1,13 +1,13 @@
 package dataaccess.local;
 
-import dataaccess.UserDAO;
+import dataaccess.UserDao;
 import model.UserData;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class LocalUserDAO implements UserDAO
+public class LocalUserDao implements UserDao
 {
     public Map<String, UserData> users = new HashMap<>();
 

@@ -1,19 +1,19 @@
 package dataaccess;
 
-import dataaccess.local.LocalAuthDAO;
-import dataaccess.local.LocalGameDAO;
-import dataaccess.local.LocalUserDAO;
+import dataaccess.local.LocalAuthDao;
+import dataaccess.local.LocalGameDao;
+import dataaccess.local.LocalUserDao;
 
 public class DAOCollection
 {
-    public UserDAO userDAO;
-    public AuthDAO authDAO;
-    public GameDAO gameDAO;
+    public UserDao userDAO;
+    public AuthDao authDAO;
+    public GameDao gameDAO;
 
     public DAOCollection()
     {
-        this.userDAO = new LocalUserDAO();
-        this.authDAO = new LocalAuthDAO();
-        this.gameDAO = new LocalGameDAO();
+        this.userDAO = new LocalUserDao();
+        this.authDAO = new LocalAuthDao();
+        this.gameDAO = new LocalGameDao();
     }
 }
