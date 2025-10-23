@@ -28,10 +28,17 @@ public class AuthService extends Service
 
     public void logout(String token) throws DataAccessException, UserNotValidatedException
     {
-        if (daos.authDao.authenticateToken(token) == null)
+        if (token == null)
         {
             throw new UserNotValidatedException("Not validated");
         }
+
+        String username = daos.authDao.authenticateToken(token);
+        if (username == null)
+        {
+            throw new UserNotValidatedException("Not validated");
+        }
+
         daos.authDao.remove(token);
     }
 }
