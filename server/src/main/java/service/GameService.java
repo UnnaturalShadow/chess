@@ -6,6 +6,7 @@ import dataaccess.exceptions.AlreadyTakenException;
 import dataaccess.exceptions.BadRequestException;
 import dataaccess.exceptions.NotAValidColorException;
 import dataaccess.exceptions.UserNotValidatedException;
+import org.eclipse.jetty.server.Authentication;
 import requestobjects.CreateRequest;
 import requestobjects.CreateResult;
 import requestobjects.JoinRequest;
@@ -23,7 +24,7 @@ public class GameService extends Service
 
     public ListResult list(String token) throws DataAccessException
     {
-        if(daos.authDao.authenticateToken(token) == null){throw new DataAccessException("Not validated");}
+        if(daos.authDao.authenticateToken(token) == null){throw new UserNotValidatedException("Not validated");}
 
         return new ListResult(daos.gameDao.list());
     }
