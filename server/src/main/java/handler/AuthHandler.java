@@ -24,9 +24,6 @@ public class AuthHandler
         } catch (UserNotValidatedException e) {
             // Invalid or missing token → 401
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
-        } catch (Exception e) {
-            // Unexpected errors → 500
-            setErrorContext(context, "500 Error: An internal error occurred", 500);
         }
     }
 }
