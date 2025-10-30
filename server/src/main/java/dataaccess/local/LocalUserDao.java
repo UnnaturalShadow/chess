@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class LocalUserDao implements UserDao
+public class LocalUserDao extends UserDao
 {
     public Map<String, UserData> users = new HashMap<>();
 

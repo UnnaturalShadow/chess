@@ -11,7 +11,7 @@ import requestobjects.JoinRequest;
 
 import java.util.*;
 
-public class LocalGameDao implements GameDao
+public class LocalGameDao extends GameDao
 {
     public Map<Integer, GameData> games = new HashMap<>();
     private int nextId = 1;
