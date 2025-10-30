@@ -18,7 +18,7 @@ public class AuthServiceTests
     {
         DaoCollection daos = new DatabaseDaoCollection();
         authService = new AuthService(daos);
-        authService.daos.authDao.addAuthToken("Garrett", "dummytoken1");
+        authService.daos.authDao.addAuthToken("Jesus", "dummytoken1");
         authService.daos.authDao.addAuthToken("Jerome", "dummytoken2");
     }
 
@@ -44,7 +44,7 @@ public class AuthServiceTests
         @Test
         public void generateTokenWithUsername() throws DataAccessException
         {
-            Assertions.assertNotNull(authService.generateNewToken("Garrett"));
+            Assertions.assertNotNull(authService.generateNewToken("Jesus"));
         }
 
         @Test

@@ -2,14 +2,16 @@ package service;
 
 import dataaccess.DaoCollection;
 import dataaccess.DataAccessException;
+import dataaccess.UserDao;
+import dataaccess.database.DatabaseDaoCollection;
 import dataaccess.exceptions.AlreadyTakenException;
 import dataaccess.exceptions.UserNotValidatedException;
-import dataaccess.local.LocalUserDao;
 import model.UserData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mindrot.jbcrypt.BCrypt;
 import requestobjects.LoginRequest;
 import requestobjects.LoginResult;
 import requestobjects.RegisterRequest;
@@ -18,12 +20,14 @@ import service.UserService;
 public class UserServiceTests
 {
     public static UserService userService;
-
     @BeforeEach
-    public void setup()
+    public void setup() throws DataAccessException
     {
-        DaoCollection daos = new DaoCollection();
+        DaoCollection daos = new DatabaseDaoCollection();
         userService = new UserService(daos);
+        daos.gameDao.clear();
+        daos.authDao.clear();
+        daos.userDao.clear();
     }
 
     @Nested
@@ -33,28 +37,31 @@ public class UserServiceTests
         public void createUserThatDoesNotExist() throws AlreadyTakenException, DataAccessException
         {
             RegisterRequest request = new RegisterRequest(
-                    "Jesus", "password123", "jehova@email.com"
+                    "Jesus", "password123", "jesus@email.com"
             );
             userService.register(request);
 
-            LocalUserDao dao = (LocalUserDao) userService.daos.userDao;
-            UserData user = dao.users.get("Jesus");
+            UserDao dao =  userService.daos.userDao;
+            UserData user = dao.getUser("Jesus");
 
             Assertions.assertEquals("Jesus", user.username());
-            Assertions.assertEquals("password123", user.password());
-            Assertions.assertEquals("jehova@email.com", user.email());
+            Assertions.assertTrue(
+                    BCrypt.checkpw("password123", user.password()),
+                    "Stored password hash does not match plaintext password"
+            );
+            Assertions.assertEquals("jesus@email.com", user.email());
         }
 
         @Test
         public void createUserThatExists() throws AlreadyTakenException, DataAccessException
         {
             RegisterRequest request1 = new RegisterRequest(
-                    "Jesus", "password123", "jehova@email.com"
+                    "Jesus", "password123", "jesus@email.com"
             );
             userService.register(request1);
 
             RegisterRequest request2 = new RegisterRequest(
-                    "Jesus", "password123", "jehova@email.com"
+                    "Jesus", "password123", "jesus@email.com"
             );
             Assertions.assertThrows(AlreadyTakenException.class, () -> userService.register(request2));
         }
@@ -66,14 +73,18 @@ public class UserServiceTests
         @BeforeEach
         public void registerJesus() throws AlreadyTakenException, DataAccessException
         {
+            DaoCollection daos = new DatabaseDaoCollection();
+            daos.gameDao.clear();
+            daos.authDao.clear();
+            daos.userDao.clear();
             RegisterRequest request = new RegisterRequest(
-                    "Jesus", "password123", "jehova@email.com"
+                    "Jesus", "password123", "jesus@email.com"
             );
             userService.register(request);
         }
 
         @Test
-        public void loginUserThatExists()
+        public void loginUserThatExists() throws DataAccessException
         {
             LoginResult result = userService.login(new LoginRequest("Jesus", "password123"));
 
