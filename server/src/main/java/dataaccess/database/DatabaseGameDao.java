@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class DatabaseGameDao implements GameDao {
+public class DatabaseGameDao extends GameDao {
     Gson serializer = new Gson();
 
     public int create(CreateRequest request) throws DataAccessException {

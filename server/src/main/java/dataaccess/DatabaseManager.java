@@ -3,7 +3,8 @@ package dataaccess;
 import java.sql.*;
 import java.util.Properties;
 
-public class DatabaseManager {
+public class DatabaseManager
+{
     private static String databaseName;
     private static String dbUsername;
     private static String dbPassword;
@@ -12,20 +13,71 @@ public class DatabaseManager {
     /*
      * Load the database information for the db.properties file.
      */
-    static {
+    static
+    {
         loadPropertiesFromResources();
     }
 
     /**
      * Creates the database if it does not already exist.
      */
-    static public void createDatabase() throws DataAccessException {
+    static public void createDatabase() throws DataAccessException
+    {
         var statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
         try (var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
              var preparedStatement = conn.prepareStatement(statement)) {
             preparedStatement.executeUpdate();
         } catch (SQLException ex) {
             throw new DataAccessException("failed to create database", ex);
+        }
+    }
+
+    final String[] createStatements =
+            {
+            """
+            CREATE TABLE IF NOT EXISTS `authdata` (
+              `idauthData` INT NOT NULL AUTO_INCREMENT,
+              `userName` VARCHAR(100) NOT NULL,
+              `token` VARCHAR(100) NOT NULL,
+              PRIMARY KEY (`idauthData`),
+              UNIQUE INDEX `idauthData_UNIQUE` (`idauthData` ASC) VISIBLE);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS `games` (
+                `idgames` INT NOT NULL AUTO_INCREMENT,
+                `name` VARCHAR(45) NOT NULL,
+                `whiteUsername` VARCHAR(45) NULL,
+                `blackUsername` VARCHAR(45) NULL,
+                `game` JSON NOT NULL,
+                PRIMARY KEY (`idgames`),
+                UNIQUE INDEX `idgames_UNIQUE` (`idgames` ASC) VISIBLE);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS `users` (
+              `idusers` INT NOT NULL AUTO_INCREMENT,
+              `username` VARCHAR(45) NOT NULL,
+              `password` VARCHAR(255) NOT NULL,
+              `email` VARCHAR(45) NOT NULL,
+              PRIMARY KEY (`idusers`),
+              UNIQUE INDEX `idusers_UNIQUE` (`idusers` ASC) VISIBLE,
+              UNIQUE INDEX `username_UNIQUE` (`username` ASC) VISIBLE);
+            """
+    };
+    public void configureDatabase() throws DataAccessException
+    {
+        createDatabase();
+        try (var conn = getConnection())
+        {
+            for (var statement: createStatements)
+            {
+                try (var preparedStatement = conn.prepareStatement(statement))
+                {
+                    preparedStatement.executeUpdate();
+                }
+            }
+        } catch (SQLException e)
+        {
+            throw new DataAccessException(e.getMessage());
         }
     }
 
@@ -41,31 +93,41 @@ public class DatabaseManager {
      * }
      * </code>
      */
-    static Connection getConnection() throws DataAccessException {
-        try {
+    static Connection getConnection() throws DataAccessException
+    {
+        try
+        {
             //do not wrap the following line with a try-with-resources
             var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
             conn.setCatalog(databaseName);
             return conn;
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex)
+        {
             throw new DataAccessException("failed to get connection", ex);
         }
     }
 
-    private static void loadPropertiesFromResources() {
-        try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
-            if (propStream == null) {
+    static void loadPropertiesFromResources()
+    {
+        try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties"))
+        {
+            if (propStream == null)
+            {
                 throw new Exception("Unable to load db.properties");
             }
             Properties props = new Properties();
             props.load(propStream);
             loadProperties(props);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             throw new RuntimeException("unable to process db.properties", ex);
         }
     }
 
-    private static void loadProperties(Properties props) {
+    private static void loadProperties(Properties props)
+    {
         databaseName = props.getProperty("db.name");
         dbUsername = props.getProperty("db.user");
         dbPassword = props.getProperty("db.password");
