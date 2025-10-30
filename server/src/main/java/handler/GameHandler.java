@@ -21,7 +21,6 @@ public class GameHandler
 {
     GameService gameService;
     Gson serializer = new Gson();
-
     public GameHandler(GameService gameService)
     {
         this.gameService = gameService;
@@ -37,6 +36,10 @@ public class GameHandler
         catch (UserNotValidatedException e)
         {
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
+        }
+        catch (DataAccessException e)
+        {
+            setErrorContext(context, "500 Data Access Error: Could not execute query", 500);
         }
     }
 
@@ -55,11 +58,11 @@ public class GameHandler
         }
         catch (DataAccessException e)
         {
-            setErrorContext(context, "500 Data Access Error: Failed to create new game", 500);
+            setErrorContext(context,"500 Data Access Error: Failed to create new game", 500);
         }
         catch (BadRequestException e)
         {
-            setErrorContext(context, "400 Bad Request Error: Some field was missing", 400);
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
         }
     }
 
@@ -75,15 +78,19 @@ public class GameHandler
         }
         catch (BadRequestException e)
         {
-            setErrorContext(context, "400 Bad Request Error: Some field was missing", 400);
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
         }
         catch (AlreadyTakenException e)
         {
-            setErrorContext(context, "403 Bad Request Error: Color already taken", 403);
+            setErrorContext(context,"403 Bad Request Error: Color already taken", 403);
         }
         catch (NotAValidColorException e)
         {
-            setErrorContext(context, "400 Bad Request Error: Not a valid color", 400);
+            setErrorContext(context,"400 Bad Request Error: Not a valid color", 400);
+        }
+        catch (DataAccessException e)
+        {
+            setErrorContext(context, "500 Data Access Error: Could not execute query", 500);
         }
     }
 }
