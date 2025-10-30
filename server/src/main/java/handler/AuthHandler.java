@@ -1,5 +1,6 @@
 package handler;
 
+import dataaccess.DataAccessException;
 import dataaccess.exceptions.UserNotValidatedException;
 import io.javalin.http.Context;
 import service.AuthService;
@@ -16,16 +17,14 @@ public class AuthHandler
 
     public void logout(Context context)
     {
-        String token = context.header("authorization");
-
         try
         {
-            authService.logout(token);
-            context.status(200); // Success
-        }
-        catch (UserNotValidatedException e)
+            authService.logout(context.header("authorization"));
+        } catch (DataAccessException e)
         {
-            // Invalid or missing token → 401
+            setErrorContext(context, "500 Error: An internal error occurred", 500);
+        } catch (UserNotValidatedException e)
+        {
             setErrorContext(context, "401 Unauthorized Error: Unauthorized", 401);
         }
     }

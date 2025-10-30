@@ -1,6 +1,8 @@
 package service;
 
 import dataaccess.DaoCollection;
+import dataaccess.DataAccessException;
+import dataaccess.database.DatabaseDaoCollection;
 import dataaccess.exceptions.BadRequestException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,11 +13,10 @@ import service.AuthService;
 public class AuthServiceTests
 {
     public static AuthService authService;
-
     @BeforeEach
-    public void setup()
+    public void setup() throws DataAccessException
     {
-        DaoCollection daos = new DaoCollection();
+        DaoCollection daos = new DatabaseDaoCollection();
         authService = new AuthService(daos);
         authService.daos.authDao.addAuthToken("Garrett", "dummytoken1");
         authService.daos.authDao.addAuthToken("Jerome", "dummytoken2");
@@ -27,13 +28,13 @@ public class AuthServiceTests
         @Test
         public void successfulLogoutTest()
         {
-            Assertions.assertDoesNotThrow(() -> authService.logout("dummytoken1"));
+            Assertions.assertDoesNotThrow(() ->  authService.logout("dummytoken1"));
         }
 
         @Test
         public void unsuccessfulLogoutTest()
         {
-            Assertions.assertThrows(Exception.class, () -> authService.logout("dummytoken"));
+            Assertions.assertThrows(Exception.class, () ->  authService.logout("dummytoken"));
         }
     }
 
@@ -41,7 +42,7 @@ public class AuthServiceTests
     class GenerateTokenTests
     {
         @Test
-        public void generateTokenWithUsername()
+        public void generateTokenWithUsername() throws DataAccessException
         {
             Assertions.assertNotNull(authService.generateNewToken("Garrett"));
         }

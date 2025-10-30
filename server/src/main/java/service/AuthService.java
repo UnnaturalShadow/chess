@@ -14,26 +14,20 @@ public class AuthService extends Service
         this.daos = daos;
     }
 
-    public String generateNewToken(String username)
+    public String generateNewToken(String username) throws DataAccessException
     {
         if (username == null)
-        {
-            throw new BadRequestException("No username supplied");
-        }
+        { throw new BadRequestException("No username supplied");}
         String newToken = UUID.randomUUID().toString();
 
         this.daos.authDao.addAuthToken(username, newToken);
         return newToken;
     }
 
-    public void logout(String token) throws UserNotValidatedException {
-        // Token missing or invalid
-        if (token == null || daos.authDao.authenticateToken(token) == null) {
-            throw new UserNotValidatedException("Not validated");
-        }
-
-        // Safe to remove; LocalAuthDao never throws DataAccessException
+    public void logout(String token) throws DataAccessException, UserNotValidatedException
+    {
+        if (daos.authDao.authenticateToken(token) == null)
+        {throw new UserNotValidatedException("Not validated");}
         daos.authDao.remove(token);
     }
-
 }

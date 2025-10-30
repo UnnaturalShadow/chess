@@ -19,7 +19,6 @@ public class UserHandler
 {
     UserService userService;
     Gson serializer = new Gson();
-
     public UserHandler(UserService userService)
     {
         this.userService = userService;
@@ -27,8 +26,16 @@ public class UserHandler
 
     public void clear(Context context)
     {
-        userService.clear();
-        context.result("{}");
+        try
+        {
+            userService.clear();
+            context.result("" + "{}");
+        }
+        catch (DataAccessException e)
+        {
+            setErrorContext(context,"500 Data Access Error: Failed to clear users", 500);
+        }
+
     }
 
     public void create(Context context)
@@ -44,11 +51,11 @@ public class UserHandler
         }
         catch (DataAccessException e)
         {
-            setErrorContext(context, "500 Data Access Error: Failed to create new user", 500);
+            setErrorContext(context,"500 Data Access Error: Failed to create new user", 500);
         }
         catch (BadRequestException e)
         {
-            setErrorContext(context, "400 Bad Request Error: Some field was missing", 400);
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
         }
     }
 
@@ -61,11 +68,15 @@ public class UserHandler
         }
         catch (BadRequestException e)
         {
-            setErrorContext(context, "400 Bad Request Error: Some field was missing", 400);
+            setErrorContext(context,"400 Bad Request Error: Some field was missing", 400);
         }
         catch (UserNotValidatedException e)
         {
             setErrorContext(context, "401 Unauthorized Error: User could not be logged in", 401);
+        }
+        catch (DataAccessException e)
+        {
+            setErrorContext(context, "500 Data Access Error: Could not connect to database", 500);
         }
     }
 }

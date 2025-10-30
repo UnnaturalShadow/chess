@@ -21,13 +21,13 @@ public class UserService extends Service
         authService = new AuthService(daos);
     }
 
-    public void clear()
+    public void clear() throws DataAccessException
     {
         this.daos.userDao.clear();
     }
 
     public RegisterResult register(RegisterRequest request)
-            throws DataAccessException, AlreadyTakenException, BadRequestException
+            throws AlreadyTakenException, DataAccessException, BadRequestException
     {
         checkForBadRequest(request.username(), request.password(), request.email());
         UserData user = new UserData(request.username(), request.password(), request.email());
@@ -43,7 +43,7 @@ public class UserService extends Service
         return new RegisterResult(request.username(), token);
     }
 
-    public LoginResult login(LoginRequest request) throws UserNotValidatedException, BadRequestException
+    public LoginResult login(LoginRequest request) throws UserNotValidatedException, BadRequestException, DataAccessException
     {
         checkForBadRequest(request.username(), request.password());
 
