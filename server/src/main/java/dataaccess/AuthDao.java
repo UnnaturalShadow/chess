@@ -1,9 +1,8 @@
 package dataaccess;
 
-public interface AuthDao extends Dao
-{
-    void addAuthToken(String username, String token);
-    String authenticateToken(String token);
-    void remove(String token);
-    void clear();
+public abstract class AuthDao extends Dao {
+    abstract public void addAuthToken(String username, String token) throws DataAccessException;
+    abstract public String authenticateToken(String token) throws DataAccessException;
+    abstract public void remove(String token) throws DataAccessException;
+    abstract public void clear() throws DataAccessException;
 }
