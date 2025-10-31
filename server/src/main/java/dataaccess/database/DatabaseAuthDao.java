@@ -2,22 +2,18 @@ package dataaccess.database;
 
 import dataaccess.AuthDao;
 import dataaccess.DataAccessException;
+import dataaccess.DatabaseManager;
 
 public class DatabaseAuthDao extends AuthDao
 {
     public void addAuthToken(String username, String token) throws DataAccessException {
-        String sqlStatement = "INSERT INTO authdata (username, token) VALUES(?, ?)";
-        try {
-            this.executeCommand(sqlStatement, username, token);
-        } catch (Exception e) { // catch whatever your executeCommand throws
-            // If the exception indicates a duplicate key, wrap and throw DataAccessException
-            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate")) {
-                throw new DataAccessException("Token already exists: " + token, e);
-            }
-            // Otherwise, rethrow as a generic DataAccessException
-            throw new DataAccessException("Error adding auth token", e);
-        }
+        long count = DatabaseManager.getCount("SELECT COUNT(*) FROM authdata WHERE token = ?", token);
+        if (count > 0) throw new DataAccessException("Token already exists: " + token);
+
+        String sql = "INSERT INTO authdata (username, token) VALUES(?, ?)";
+        this.executeCommand(sql, username, token);
     }
+
 
     public String authenticateToken(String token) throws DataAccessException
     {

@@ -127,6 +127,23 @@ public class DatabaseManager
         }
     }
 
+    public static long getCount(String sql, String param) throws DataAccessException {
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, param);  // bind parameter
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);  // first column of first row
+                } else {
+                    return 0; // no rows returned
+                }
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error executing getCount query", ex);
+        }
+    }
+
     private static void loadProperties(Properties props)
     {
         databaseName = props.getProperty("db.name");
