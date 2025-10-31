@@ -17,7 +17,8 @@ import service.UserService;
 
 import java.util.Map;
 
-public class Server {
+public class Server
+{
     private final Javalin javalin;
     DaoCollection daos = new DatabaseDaoCollection();
     AuthService authService = new AuthService(daos);
@@ -28,7 +29,8 @@ public class Server {
     GameHandler gameHandlers = new GameHandler(gameService);
     DatabaseManager databaseManager = new DatabaseManager();
 
-    public Server() {
+    public Server()
+    {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
         javalin.delete("/db", new AppService(daos)::clear)
@@ -40,25 +42,32 @@ public class Server {
                 .put("/game", gameHandlers::join);
     }
 
-    public int run(int desiredPort) {
+    public int run(int desiredPort)
+    {
         javalin.start(desiredPort);
-        try {
+        try
+        {
             databaseManager.configureDatabase();
-        } catch (DataAccessException e) {
+        } catch (DataAccessException e)
+        {
             System.out.println("Failed to set up the database");
         }
 
         return javalin.port();
     }
 
-    public void stop() {
+    public void stop()
+    {
         javalin.stop();
     }
 
-    public static String buildJson(Object... keysAndVals) {
+    public static String buildJson(Object... keysAndVals)
+    {
         Map<String, Object> pairs = new java.util.HashMap<>(Map.of());
-        for (int i = 1; i < keysAndVals.length; i++){
-            if (i%2 == 1) {
+        for (int i = 1; i < keysAndVals.length; i++)
+        {
+            if (i%2 == 1)
+            {
                 pairs.put((String) keysAndVals[i-1], keysAndVals[i]);
             }
         }
@@ -66,7 +75,8 @@ public class Server {
         return new Gson().toJson(pairs);
     }
 
-    public static void setErrorContext(Context context, String message, int status) {
+    public static void setErrorContext(Context context, String message, int status)
+    {
         context.result(buildJson("message", message));
         context.status(status);
     }
