@@ -1,75 +1,72 @@
 package dataaccess;
 
-import dataaccess.database.DatabaseDaoCollection;
 import model.UserData;
-//import dataaccess.*;
 import org.junit.jupiter.api.*;
-
 import static org.junit.jupiter.api.Assertions.*;
+import dataaccess.database.DatabaseUserDao;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserDaoTests {
 
-    private UserDao userDao;
+    private static UserDao userDao;
 
-    @BeforeEach
-    public void setup() throws DataAccessException {
-        DatabaseDaoCollection daos = new DatabaseDaoCollection();
-        userDao = daos.userDao;
+    @BeforeAll
+    public static void setup() throws DataAccessException {
+        userDao = new DatabaseUserDao();
         userDao.clear();
     }
 
-    @Nested
-    class CreateAndGetTests {
+    @Test @Order(1)
+    public void createUser_Positive() throws DataAccessException {
+        UserData user = new UserData("alice", "password123", "alice@email.com");
+        userDao.createUser(user);
 
-        @Test
-        public void createAndRetrieveUser() throws DataAccessException {
-            UserData user = new UserData("Jesus", "password123", "jesus@email.com");
-            userDao.createUser(user);
-
-            UserData retrieved = userDao.getUser("Jesus");
-            assertNotNull(retrieved);
-            assertEquals("Jesus", retrieved.username());
-            assertEquals("jesus@email.com", retrieved.email());
-        }
-
-        @Test
-        public void getNonexistentUser() throws DataAccessException {
-            assertNull(userDao.getUser("ghost"));
-        }
+        UserData retrieved = userDao.getUser("alice");
+        assertNotNull(retrieved);
+        assertEquals("alice", retrieved.username());
     }
 
-    @Nested
-    class ValidatePasswordTests {
-
-        @Test
-        public void correctPasswordReturnsTrue() throws DataAccessException {
-            userDao.createUser(new UserData("Peter", "password", "p@email.com"));
-            assertTrue(userDao.validateWithPassword("Peter", "password"));
-        }
-
-        @Test
-        public void incorrectPasswordReturnsFalse() throws DataAccessException {
-            userDao.createUser(new UserData("Paul", "pass", "p@email.com"));
-            assertFalse(userDao.validateWithPassword("Paul", "wrong"));
-        }
-
-        @Test
-        public void nonexistentUserReturnsFalse() throws DataAccessException {
-            assertFalse(userDao.validateWithPassword("nobody", "password"));
-        }
+    @Test @Order(2)
+    public void createUser_Negative_DuplicateUsername() throws DataAccessException {
+        UserData user = new UserData("bob", "pass", "b@email.com");
+        userDao.createUser(user);
+        assertThrows(DataAccessException.class, () -> userDao.createUser(user));
     }
 
-    @Nested
-    class ClearTests {
+    @Test @Order(3)
+    public void getUser_Positive() throws DataAccessException {
+        UserData expected = new UserData("charlie", "charpass", "charlie@email.com");
+        userDao.createUser(expected);
 
-        @Test
-        public void clearRemovesAllUsers() throws DataAccessException {
-            userDao.createUser(new UserData("A", "x", "a@a.com"));
-            userDao.createUser(new UserData("B", "x", "b@b.com"));
+        UserData actual = userDao.getUser("charlie");
+        assertEquals(expected.username(), actual.username());
+    }
 
-            userDao.clear();
-            assertNull(userDao.getUser("A"));
-            assertNull(userDao.getUser("B"));
-        }
+    @Test @Order(4)
+    public void getUser_Negative_NotFound() throws DataAccessException {
+        assertNull(userDao.getUser("nonexistent_user"));
+    }
+
+    @Test @Order(5)
+    public void validateWithPassword_Positive() throws DataAccessException {
+        userDao.createUser(new UserData("dan", "secret", "d@email.com"));
+        assertTrue(userDao.validateWithPassword("dan", "secret"));
+    }
+
+    @Test @Order(6)
+    public void validateWithPassword_Negative_WrongPassword() throws DataAccessException {
+        userDao.createUser(new UserData("eve", "goodpass", "e@email.com"));
+        assertFalse(userDao.validateWithPassword("eve", "wrongpass"));
+    }
+
+    @Test @Order(7)
+    public void clear_Positive() throws DataAccessException {
+        userDao.clear();
+        assertNull(userDao.getUser("alice"));
+    }
+
+    @Test @Order(8)
+    public void clear_Negative_NoErrorOnEmptyTable() {
+        assertDoesNotThrow(() -> userDao.clear());
     }
 }

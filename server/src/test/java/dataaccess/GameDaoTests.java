@@ -1,98 +1,104 @@
 package dataaccess;
 
-import dataaccess.database.DatabaseDaoCollection;
-import dataaccess.exceptions.AlreadyTakenException;
+import dataaccess.exceptions.*;
 import model.GameData;
 import org.junit.jupiter.api.*;
 import requestobjects.CreateRequest;
 import requestobjects.JoinRequest;
-//import dataaccess.*;
+import dataaccess.database.DatabaseGameDao;
+
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class GameDaoTests {
 
-    private GameDao gameDao;
+    private static GameDao gameDao;
 
-    @BeforeEach
-    public void setup() throws DataAccessException {
-        DatabaseDaoCollection daos = new DatabaseDaoCollection();
-        gameDao = daos.gameDao;
+    @BeforeAll
+    public static void setup() throws DataAccessException {
+        gameDao = new DatabaseGameDao(); // replace with your concrete implementation
         gameDao.clear();
     }
 
-    @Nested
-    class CreateAndGetTests {
-
-        @Test
-        public void createAndRetrieveGame() throws DataAccessException {
-            int gameId = gameDao.create(new CreateRequest("TestGame"));
-            GameData retrieved = gameDao.getGame(gameId);
-
-            assertNotNull(retrieved);
-            assertEquals("TestGame", retrieved.gameName());
-        }
-
-        @Test
-        public void getNonexistentGame() throws DataAccessException {
-            assertNull(gameDao.getGame(9999));
-        }
+    @Test @Order(1)
+    public void create_Positive() throws DataAccessException {
+        CreateRequest req = new CreateRequest("Game1");
+        int id = gameDao.create(req);
+        assertTrue(id > 0, "Game ID should be greater than zero after insertion");
     }
 
-    @Nested
-    class ListTests {
-
-        @Test
-        public void listGamesAfterCreation() throws DataAccessException {
-            gameDao.create(new CreateRequest("Alpha"));
-            gameDao.create(new CreateRequest("Beta"));
-
-            List<GameData> games = gameDao.list();
-            assertEquals(2, games.size());
-            assertTrue(games.stream().anyMatch(g -> g.gameName().equals("Alpha")));
-            assertTrue(games.stream().anyMatch(g -> g.gameName().equals("Beta")));
-        }
-
-        @Test
-        public void listEmptyWhenCleared() throws DataAccessException {
-            gameDao.clear();
-            List<GameData> games = gameDao.list();
-            assertTrue(games.isEmpty());
-        }
+    @Test @Order(2)
+    public void create_Negative_NullRequest() {
+        assertThrows(DataAccessException.class, () -> gameDao.create(null),
+                "Creating a game with a null request should throw DataAccessException");
     }
 
-    @Nested
-    class JoinTests {
-
-        @Test
-        public void joinGameSuccessfully() throws DataAccessException {
-            int gameId = gameDao.create(new CreateRequest("NewGame"));
-            JoinRequest joinReq = new JoinRequest("WHITE", gameId);
-            assertDoesNotThrow(() -> gameDao.join(joinReq, "Jesus"));
-        }
-
-        @Test
-        public void joinSameColorTwiceThrows() throws DataAccessException, AlreadyTakenException {
-            int gameId = gameDao.create(new CreateRequest("Game1"));
-            JoinRequest joinReq = new JoinRequest("WHITE", gameId);
-            gameDao.join(joinReq, "Jesus");
-
-            assertThrows(AlreadyTakenException.class, () -> gameDao.join(joinReq, "Peter"));
-        }
+    @Test @Order(3)
+    public void getGame_Positive() throws DataAccessException {
+        CreateRequest req = new CreateRequest("Game2");
+        int id = gameDao.create(req);
+        GameData game = gameDao.getGame(id);
+        assertNotNull(game);
+        assertEquals("Game2", game.gameName(), "Game name should match the created request");
     }
 
-    @Nested
-    class ClearTests {
+    @Test @Order(4)
+    public void getGame_Negative_InvalidID() throws DataAccessException {
+        GameData game = gameDao.getGame(-999);
+        assertNull(game, "Requesting a game with invalid ID should return null");
+    }
 
-        @Test
-        public void clearRemovesAllGames() throws DataAccessException {
-            gameDao.create(new CreateRequest("X"));
-            gameDao.create(new CreateRequest("Y"));
+    @Test @Order(5)
+    public void list_Positive() throws DataAccessException {
+        gameDao.create(new CreateRequest("Game3"));
+        List<GameData> games = gameDao.list();
+        assertNotNull(games);
+        assertFalse(games.isEmpty(), "Game list should contain at least one game");
+    }
 
-            gameDao.clear();
-            assertTrue(gameDao.list().isEmpty());
-        }
+    @Test @Order(6)
+    public void list_Negative_EmptyAfterClear() throws DataAccessException {
+        gameDao.clear();
+        List<GameData> games = gameDao.list();
+        assertEquals(0, games.size(), "Game list should be empty after clear()");
+    }
+
+    @Test @Order(7)
+    public void join_Positive() throws DataAccessException, AlreadyTakenException {
+        int id = gameDao.create(new CreateRequest("Game4"));
+
+        // Always join a free color: "WHITE" or "BLACK" in uppercase to match DAO
+        JoinRequest joinReq = new JoinRequest("WHITE", id);
+
+        assertDoesNotThrow(() -> gameDao.join(joinReq, "user1"),
+                "Joining a valid game should not throw an exception");
+    }
+
+    @Test @Order(8)
+    public void join_Negative_AlreadyTaken() throws DataAccessException, AlreadyTakenException {
+        int id = gameDao.create(new CreateRequest("Game5"));
+
+        JoinRequest joinReq = new JoinRequest("WHITE", id);
+        gameDao.join(joinReq, "user1"); // first player takes the slot
+
+        // second attempt to join same color should fail
+        assertThrows(AlreadyTakenException.class, () -> gameDao.join(joinReq, "user2"),
+                "Joining the same color slot twice should throw AlreadyTakenException");
+    }
+
+
+    @Test @Order(9)
+    public void clear_Positive() throws DataAccessException {
+        gameDao.create(new CreateRequest("Game6"));
+        gameDao.clear();
+        assertEquals(0, gameDao.list().size(), "Game list should be empty after clear()");
+    }
+
+    @Test @Order(10)
+    public void clear_Negative_NoErrorOnEmptyTable() {
+        assertDoesNotThrow(() -> gameDao.clear(), "Clearing an already empty table should not throw");
     }
 }

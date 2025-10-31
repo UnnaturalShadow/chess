@@ -17,15 +17,16 @@ public class DatabaseGameDao extends GameDao
 {
     Gson serializer = new Gson();
 
-    public int create(CreateRequest request) throws DataAccessException
-    {
-        String serializedGame = serializer.toJson(
-                new ChessGame()
-        );
+    public int create(CreateRequest request) throws DataAccessException {
+        if (request == null) {
+            throw new DataAccessException("CreateRequest cannot be null");
+        }
 
+        String serializedGame = serializer.toJson(new ChessGame());
         String sqlStatement = "INSERT INTO games (name, whiteUsername, blackUsername, game) VALUES (?, ?, ?, ?)";
         return executeCommand(sqlStatement, request.gameName(), null, null, serializedGame);
     }
+
 
     public GameData getGame(int gameID) throws DataAccessException
     {

@@ -1,69 +1,64 @@
 package dataaccess;
 
-import dataaccess.database.DatabaseDaoCollection;
-//import dataaccess.database.DatabaseAuthDao;
-import dataaccess.exceptions.*;
 import org.junit.jupiter.api.*;
-//import dataaccess.*;
-
 import static org.junit.jupiter.api.Assertions.*;
+import dataaccess.database.DatabaseAuthDao;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AuthDaoTests {
 
-    private AuthDao authDao;
+    private static AuthDao authDao;
 
-    @BeforeEach
-    public void setup() throws DataAccessException {
-        DatabaseDaoCollection daos = new DatabaseDaoCollection();
-        authDao = daos.authDao;
+    @BeforeAll
+    public static void setup() throws DataAccessException {
+        authDao = new DatabaseAuthDao();
         authDao.clear();
     }
 
-    @Nested
-    class AddAndAuthenticateTests {
-
-        @Test
-        public void addAndAuthenticateToken() throws DataAccessException {
-            authDao.addAuthToken("Jesus", "token123");
-            String username = authDao.authenticateToken("token123");
-
-            assertEquals("Jesus", username, "AuthDao should return the correct username for a valid token");
-        }
-
-        @Test
-        public void authenticateInvalidToken() throws DataAccessException {
-            assertNull(authDao.authenticateToken("invalidtoken"), "AuthDao should return null for invalid token");
-        }
+    @Test @Order(1)
+    public void addAuthToken_Positive() throws DataAccessException {
+        authDao.addAuthToken("userA", "token123");
+        String username = authDao.authenticateToken("token123");
+        assertEquals("userA", username);
     }
 
-    @Nested
-    class RemoveTests {
-
-        @Test
-        public void removeExistingToken() throws DataAccessException {
-            authDao.addAuthToken("Jerome", "token1");
-            authDao.remove("token1");
-
-            assertNull(authDao.authenticateToken("token1"), "Token should be removed from DB");
-        }
-
-        @Test
-        public void removeNonexistentToken() {
-            assertDoesNotThrow(() -> authDao.remove("notoken"), "Removing nonexistent token should not throw");
-        }
+    @Test @Order(2)
+    public void addAuthToken_Negative_DuplicateToken() throws DataAccessException {
+        authDao.addAuthToken("userB", "dupToken");
+        assertThrows(DataAccessException.class, () -> authDao.addAuthToken("userB", "dupToken"));
     }
 
-    @Nested
-    class ClearTests {
+    @Test @Order(3)
+    public void authenticateToken_Positive() throws DataAccessException {
+        authDao.addAuthToken("userD", "auth123");
+        assertEquals("userD", authDao.authenticateToken("auth123"));
+    }
 
-        @Test
-        public void clearRemovesAllTokens() throws DataAccessException {
-            authDao.addAuthToken("A", "t1");
-            authDao.addAuthToken("B", "t2");
+    @Test @Order(4)
+    public void authenticateToken_Negative_InvalidToken() throws DataAccessException {
+        assertNull(authDao.authenticateToken("not_a_token"));
+    }
 
-            authDao.clear();
-            assertNull(authDao.authenticateToken("t1"));
-            assertNull(authDao.authenticateToken("t2"));
-        }
+    @Test @Order(5)
+    public void remove_Positive() throws DataAccessException {
+        authDao.addAuthToken("userE", "tokenToRemove");
+        authDao.remove("tokenToRemove");
+        assertNull(authDao.authenticateToken("tokenToRemove"));
+    }
+
+    @Test @Order(6)
+    public void remove_Negative_NonExistentToken() {
+        assertDoesNotThrow(() -> authDao.remove("doesNotExist"));
+    }
+
+    @Test @Order(7)
+    public void clear_Positive() throws DataAccessException {
+        authDao.clear();
+        assertNull(authDao.authenticateToken("token123"));
+    }
+
+    @Test @Order(8)
+    public void clear_Negative_NoErrorOnEmptyTable() {
+        assertDoesNotThrow(() -> authDao.clear());
     }
 }
