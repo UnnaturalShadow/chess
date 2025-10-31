@@ -7,8 +7,17 @@ public class DatabaseAuthDao extends AuthDao
 {
     public void addAuthToken(String username, String token) throws DataAccessException
     {
-        String sqlStatement = "INSERT INTO authdata (username, token) VALUES(?, ?)";
-        this.executeCommand(sqlStatement, username, token);
+        String sql = "INSERT INTO authdata (username, token) VALUES (?, ?)";
+        try {
+            this.executeCommand(sql, username, token);
+        } catch (DataAccessException e) {
+            // If the cause is a SQL integrity/duplicate error, rethrow as DataAccessException
+            if (e.getCause() instanceof java.sql.SQLIntegrityConstraintViolationException) {
+                throw new DataAccessException("Duplicate token: " + token, e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     public String authenticateToken(String token) throws DataAccessException
