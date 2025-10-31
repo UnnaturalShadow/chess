@@ -8,8 +8,10 @@ public class DatabaseAuthDao extends AuthDao
 {
     public void addAuthToken(String username, String token) throws DataAccessException {
         long count = DatabaseManager.getCount("SELECT COUNT(*) FROM authdata WHERE token = ?", token);
-        if (count > 0) throw new DataAccessException("Token already exists: " + token);
-
+        if (count > 0)
+        {
+            throw new DataAccessException("Token already exists: " + token);
+        }
         String sql = "INSERT INTO authdata (username, token) VALUES(?, ?)";
         this.executeCommand(sql, username, token);
     }
