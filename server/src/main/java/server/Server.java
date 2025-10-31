@@ -1,5 +1,8 @@
 package server;
 
+import dataaccess.DataAccessException;
+import dataaccess.DatabaseManager;
+import dataaccess.database.DatabaseDaoCollection;
 import handler.AuthHandler;
 import handler.GameHandler;
 import handler.UserHandler;
@@ -16,13 +19,14 @@ import java.util.Map;
 
 public class Server {
     private final Javalin javalin;
-    DaoCollection daos = new DaoCollection();
+    DaoCollection daos = new DatabaseDaoCollection();
     AuthService authService = new AuthService(daos);
     AuthHandler authHandlers = new AuthHandler(authService);
     UserService userService = new UserService(daos);
     UserHandler userHandlers = new UserHandler(userService);
     GameService gameService = new GameService(daos);
     GameHandler gameHandlers = new GameHandler(gameService);
+    DatabaseManager databaseManager = new DatabaseManager();
 
     public Server() {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
@@ -38,6 +42,12 @@ public class Server {
 
     public int run(int desiredPort) {
         javalin.start(desiredPort);
+        try {
+            databaseManager.configureDatabase();
+        } catch (DataAccessException e) {
+            System.out.println("Failed to set up the database");
+        }
+
         return javalin.port();
     }
 

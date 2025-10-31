@@ -28,8 +28,7 @@ public class DatabaseManager
              var preparedStatement = conn.prepareStatement(statement))
         {
             preparedStatement.executeUpdate();
-        }
-        catch (SQLException ex)
+        } catch (SQLException ex)
         {
             throw new DataAccessException("failed to create database", ex);
         }
@@ -78,8 +77,7 @@ public class DatabaseManager
                     preparedStatement.executeUpdate();
                 }
             }
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             throw new DataAccessException(e.getMessage());
         }
@@ -106,8 +104,7 @@ public class DatabaseManager
             var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
             conn.setCatalog(databaseName);
             return conn;
-        }
-        catch (SQLException ex)
+        } catch (SQLException ex)
         {
             throw new DataAccessException("failed to get connection", ex);
         }
@@ -124,8 +121,7 @@ public class DatabaseManager
             Properties props = new Properties();
             props.load(propStream);
             loadProperties(props);
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             throw new RuntimeException("unable to process db.properties", ex);
         }
