@@ -1,3 +1,4 @@
+
 package service;
 
 import dataaccess.DaoCollection;
@@ -15,11 +16,12 @@ import org.mindrot.jbcrypt.BCrypt;
 import requestobjects.LoginRequest;
 import requestobjects.LoginResult;
 import requestobjects.RegisterRequest;
-import service.UserService;
+//import service.UserService;
 
 public class UserServiceTests
 {
     public static UserService userService;
+
     @BeforeEach
     public void setup() throws DataAccessException
     {
@@ -37,11 +39,11 @@ public class UserServiceTests
         public void createUserThatDoesNotExist() throws AlreadyTakenException, DataAccessException
         {
             RegisterRequest request = new RegisterRequest(
-                    "Jesus", "password123", "jesus@email.com"
+                    "Jesus", "password123", "jesusTheChrist@email.com"
             );
             userService.register(request);
 
-            UserDao dao =  userService.daos.userDao;
+            UserDao dao = userService.daos.userDao;
             UserData user = dao.getUser("Jesus");
 
             Assertions.assertEquals("Jesus", user.username());
@@ -49,19 +51,19 @@ public class UserServiceTests
                     BCrypt.checkpw("password123", user.password()),
                     "Stored password hash does not match plaintext password"
             );
-            Assertions.assertEquals("jesus@email.com", user.email());
+            Assertions.assertEquals("jesusTheChrist@email.com", user.email());
         }
 
         @Test
         public void createUserThatExists() throws AlreadyTakenException, DataAccessException
         {
             RegisterRequest request1 = new RegisterRequest(
-                    "Jesus", "password123", "jesus@email.com"
+                    "Jesus", "password123", "jesusTheChrist@email.com"
             );
             userService.register(request1);
 
             RegisterRequest request2 = new RegisterRequest(
-                    "Jesus", "password123", "jesus@email.com"
+                    "Jesus", "password123", "jesusTheChrist@email.com"
             );
             Assertions.assertThrows(AlreadyTakenException.class, () -> userService.register(request2));
         }
@@ -78,7 +80,7 @@ public class UserServiceTests
             daos.authDao.clear();
             daos.userDao.clear();
             RegisterRequest request = new RegisterRequest(
-                    "Jesus", "password123", "jesus@email.com"
+                    "Jesus", "password123", "jesusTheChrist@email.com"
             );
             userService.register(request);
         }
