@@ -5,18 +5,18 @@ import dataaccess.DataAccessException;
 
 public class DatabaseAuthDao extends AuthDao
 {
-    public void addAuthToken(String username, String token) throws DataAccessException
-    {
+    public void addAuthToken(String username, String token) throws DataAccessException {
         String sql = "INSERT INTO authdata (username, token) VALUES (?, ?)";
         try {
             this.executeCommand(sql, username, token);
         } catch (DataAccessException e) {
-            // If the cause is a SQL integrity/duplicate error, rethrow as DataAccessException
-            if (e.getCause() instanceof java.sql.SQLIntegrityConstraintViolationException) {
-                throw new DataAccessException("Duplicate token: " + token, e);
-            } else {
-                throw e;
+            // Wrap any SQLIntegrityConstraintViolationException as a DataAccessException
+            Throwable cause = e.getCause();
+            if (cause instanceof java.sql.SQLIntegrityConstraintViolationException) {
+                throw new DataAccessException("Duplicate token: " + token);
             }
+            // Otherwise rethrow original
+            throw e;
         }
     }
 
