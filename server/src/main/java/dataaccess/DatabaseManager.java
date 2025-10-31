@@ -25,9 +25,12 @@ public class DatabaseManager
     {
         var statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
         try (var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
-             var preparedStatement = conn.prepareStatement(statement)) {
+             var preparedStatement = conn.prepareStatement(statement))
+        {
             preparedStatement.executeUpdate();
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex)
+        {
             throw new DataAccessException("failed to create database", ex);
         }
     }
@@ -75,7 +78,8 @@ public class DatabaseManager
                     preparedStatement.executeUpdate();
                 }
             }
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             throw new DataAccessException(e.getMessage());
         }
@@ -88,7 +92,8 @@ public class DatabaseManager
      * The easiest way to do that is with a try-with-resource block.
      * <br/>
      * <code>
-     * try (var conn = DatabaseManager.getConnection()) {
+     * try (var conn = DatabaseManager.getConnection())
+     * {
      * // execute SQL statements.
      * }
      * </code>
