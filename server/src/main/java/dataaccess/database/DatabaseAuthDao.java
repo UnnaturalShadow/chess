@@ -6,17 +6,16 @@ import dataaccess.DataAccessException;
 public class DatabaseAuthDao extends AuthDao
 {
     public void addAuthToken(String username, String token) throws DataAccessException {
-        String sql = "INSERT INTO authdata (username, token) VALUES (?, ?)";
+        String sqlStatement = "INSERT INTO authdata (username, token) VALUES(?, ?)";
         try {
-            this.executeCommand(sql, username, token);
-        } catch (DataAccessException e) {
-            // Wrap any SQLIntegrityConstraintViolationException as a DataAccessException
-            Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLIntegrityConstraintViolationException) {
-                throw new DataAccessException("Duplicate token: " + token);
+            this.executeCommand(sqlStatement, username, token);
+        } catch (Exception e) { // catch whatever your executeCommand throws
+            // If the exception indicates a duplicate key, wrap and throw DataAccessException
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate")) {
+                throw new DataAccessException("Token already exists: " + token, e);
             }
-            // Otherwise rethrow original
-            throw e;
+            // Otherwise, rethrow as a generic DataAccessException
+            throw new DataAccessException("Error adding auth token", e);
         }
     }
 
