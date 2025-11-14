@@ -30,6 +30,7 @@ public class BoardDrawer {
             ChessPiece.PieceType.ROOK, WHITE_ROOK,
             ChessPiece.PieceType.PAWN, WHITE_PAWN
     );
+
     private final Map<ChessPiece.PieceType, String> blackTypeToString = Map.of(
             ChessPiece.PieceType.KING, BLACK_KING,
             ChessPiece.PieceType.QUEEN, BLACK_QUEEN,
@@ -51,8 +52,9 @@ public class BoardDrawer {
     }
 
     private String getPieceString(ChessPiece piece) {
-        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE)
+        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE) {
             return whiteTypeToString.get(piece.getPieceType());
+        }
         return blackTypeToString.get(piece.getPieceType());
     }
 
@@ -64,13 +66,13 @@ public class BoardDrawer {
         for (int row = 0; row < 8; row++) {
 
             int actualRow = (perspective == ChessGame.TeamColor.BLACK)
-                    ? 7 - row     // reverse order: 8→1
+                    ? 7 - row   // flip vertically
                     : row;
 
             ChessPiece[] rawRow = board.getTiles()[actualRow];
             ChessPiece[] displayRow = new ChessPiece[8];
 
-            // flip columns if black perspective
+            // flip columns for black
             for (int col = 0; col < 8; col++) {
                 displayRow[col] = (perspective == ChessGame.TeamColor.BLACK)
                         ? rawRow[7 - col]
@@ -92,6 +94,7 @@ public class BoardDrawer {
 
             out.print("\u2003" + (char) ('a' + displayCol) + " ");
         }
+
         out.println();
     }
 
@@ -107,8 +110,13 @@ public class BoardDrawer {
             out.print(squareColorCodes.get(currentColor));
 
             ChessPiece piece = row[col];
-            if (piece != null) out.print(getPieceString(piece));
-            else out.print(EMPTY);
+            if (piece != null) {
+                out.print(SET_TEXT_COLOR_WHITE);
+                out.print(getPieceString(piece));
+                out.print(RESET_TEXT_COLOR);
+            } else {
+                out.print(EMPTY); // empty square
+            }
 
             currentColor = flip(currentColor);
         }
