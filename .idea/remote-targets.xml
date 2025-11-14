@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="deckerj7@rome.cs.byu.edu:22" type="ssh/sftp" uuid="95641229-e01e-4553-ba17-c2aba9d438b7">
+        <config>
+          <option name="projectRootOnTarget" value="/users/guest/d/deckerj7/chess" />
+          <option name="serverName" value="deckerj7@rome.cs.byu.edu:22 password" />
+        </config>
+        <ContributedStateBase type="JavaLanguageRuntime">
+          <config>
+            <option name="homePath" value="/lib/jvm/java-11-openjdk-amd64" />
+            <option name="javaVersionString" value="11.0.28" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

@@ -103,7 +103,7 @@ public class ChessClient
 
     private void printPrompt()
     {
-        System.out.print(RESET_TEXT_COLOR + ">>> " + SET_TEXT_COLOR_GREEN);
+        System.out.print(RESET_TEXT_COLOR + ">>> " + SET_TEXT_COLOR_RED);
     }
 
     private String register()
@@ -269,7 +269,7 @@ public class ChessClient
 
     private String printBoard(ChessBoard board, ChessGame.TeamColor perspective)
     {
-        new BoardDrawer(board, perspective).print();
+        new BoardDrawer().render(perspective);
         return "";
     }
 
