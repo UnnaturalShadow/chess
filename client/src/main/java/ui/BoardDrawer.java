@@ -1,4 +1,3 @@
-
 package ui;
 
 import chess.ChessBoard;
@@ -11,10 +10,9 @@ import java.util.Map;
 
 import static ui.EscapeSequences.*;
 
-public class BoardDrawer
-{
-    public enum SquareColor
-    {
+public class BoardDrawer {
+
+    public enum SquareColor {
         LIGHT,
         DARK
     }
@@ -41,82 +39,88 @@ public class BoardDrawer
             ChessPiece.PieceType.PAWN, BLACK_PAWN
     );
 
+    private final PrintStream out =
+            new PrintStream(System.out, true, StandardCharsets.UTF_8);
 
-
-    private String getPieceString(ChessPiece piece)
-    {
-        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE)
-        {
-            return whiteTypeToString.get(piece.getPieceType());
-        } else
-        {
-            return blackTypeToString.get(piece.getPieceType());
-        }
-    }
-
-    PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
     private final ChessBoard board;
     private final ChessGame.TeamColor perspective;
-    public BoardDrawer(ChessBoard board, ChessGame.TeamColor perspective)
-    {
-        board.resetBoard();
+
+    public BoardDrawer(ChessBoard board, ChessGame.TeamColor perspective) {
         this.board = board;
         this.perspective = perspective;
     }
 
-    public void print()
-    {
-        out.print(SET_TEXT_COLOR_WHITE);
-        SquareColor startingSquareColor = SquareColor.LIGHT;
-        for (int i = 0; i < 8; i++)
-        {
-            int rowId = perspective == ChessGame.TeamColor.BLACK ? (7-i): i;
-
-            ChessPiece[] row = board.getTiles()[rowId];
-            startingSquareColor = printRowOfSquares(row, startingSquareColor, rowId);
-        }
-        out.print(RESET_BG_COLOR + " ");
-        for (int i = 0; i < 8; i++)
-        {
-            int rowId = perspective == ChessGame.TeamColor.BLACK ? (7-i): i;
-            out.print("\u2003" + (char) (rowId + 97) + " ");
-        }
+    private String getPieceString(ChessPiece piece) {
+        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE)
+            return whiteTypeToString.get(piece.getPieceType());
+        return blackTypeToString.get(piece.getPieceType());
     }
 
-    SquareColor printRowOfSquares(ChessPiece[] pieces, SquareColor startingSquareColor, int row)
-    {
-        var out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
-        SquareColor currentColor = startingSquareColor;
+    public void print() {
+        out.print(SET_TEXT_COLOR_WHITE);
 
-        out.print(RESET_BG_COLOR);
-        out.print((8-row));
-        for (int width = 0; width < 8; width++)
-        {
-            out.print(squareColorCodes.get(currentColor));
+        SquareColor rowStartColor = SquareColor.LIGHT;
 
-            if (pieces[width] != null)
-            {
-                out.print(getPieceString(pieces[width]));
-            } else
-            {
-                out.print(EMPTY);
+        for (int row = 0; row < 8; row++) {
+
+            int actualRow = (perspective == ChessGame.TeamColor.BLACK)
+                    ? 7 - row     // reverse order: 8→1
+                    : row;
+
+            ChessPiece[] rawRow = board.getTiles()[actualRow];
+            ChessPiece[] displayRow = new ChessPiece[8];
+
+            // flip columns if black perspective
+            for (int col = 0; col < 8; col++) {
+                displayRow[col] = (perspective == ChessGame.TeamColor.BLACK)
+                        ? rawRow[7 - col]
+                        : rawRow[col];
             }
 
-            currentColor = swapColor(currentColor);
+            rowStartColor = printRow(displayRow, rowStartColor, actualRow);
         }
 
-        out.print(RESET_BG_COLOR + "\n");
-        return swapColor(currentColor);
+        // bottom file letters
+        out.print(RESET_BG_COLOR);
+        out.print(RESET_TEXT_COLOR);
+        out.print(" ");
+
+        for (int col = 0; col < 8; col++) {
+            int displayCol = (perspective == ChessGame.TeamColor.BLACK)
+                    ? 7 - col
+                    : col;
+
+            out.print("\u2003" + (char) ('a' + displayCol) + " ");
+        }
+        out.println();
     }
 
-    private SquareColor swapColor(SquareColor currentColor)
-    {
-        if (currentColor == SquareColor.LIGHT)
-        {
-            return SquareColor.DARK;
-        } else
-        {
-            return SquareColor.LIGHT;
+    private SquareColor printRow(ChessPiece[] row, SquareColor starting, int actualRow) {
+        SquareColor currentColor = starting;
+
+        // print rank number
+        out.print(RESET_BG_COLOR);
+        out.print(RESET_TEXT_COLOR);
+        out.print(8 - actualRow);
+
+        for (int col = 0; col < 8; col++) {
+            out.print(squareColorCodes.get(currentColor));
+
+            ChessPiece piece = row[col];
+            if (piece != null) out.print(getPieceString(piece));
+            else out.print(EMPTY);
+
+            currentColor = flip(currentColor);
         }
+
+        out.print(RESET_BG_COLOR);
+        out.print(RESET_TEXT_COLOR);
+        out.println();
+
+        return flip(currentColor);
+    }
+
+    private SquareColor flip(SquareColor c) {
+        return (c == SquareColor.LIGHT ? SquareColor.DARK : SquareColor.LIGHT);
     }
 }
