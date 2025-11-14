@@ -10,9 +10,11 @@ import java.util.Map;
 
 import static ui.EscapeSequences.*;
 
-public class BoardDrawer {
+public class BoardDrawer
+{
 
-    public enum SquareColor {
+    public enum SquareColor
+    {
         LIGHT,
         DARK
     }
@@ -46,24 +48,29 @@ public class BoardDrawer {
     private final ChessBoard board;
     private final ChessGame.TeamColor perspective;
 
-    public BoardDrawer(ChessBoard board, ChessGame.TeamColor perspective) {
+    public BoardDrawer(ChessBoard board, ChessGame.TeamColor perspective)
+    {
         this.board = board;
         this.perspective = perspective;
     }
 
-    private String getPieceString(ChessPiece piece) {
-        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE) {
+    private String getPieceString(ChessPiece piece)
+    {
+        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE)
+        {
             return whiteTypeToString.get(piece.getPieceType());
         }
         return blackTypeToString.get(piece.getPieceType());
     }
 
-    public void print() {
+    public void print()
+    {
         out.print(SET_TEXT_COLOR_WHITE);
 
         SquareColor rowStartColor = SquareColor.LIGHT;
 
-        for (int row = 0; row < 8; row++) {
+        for (int row = 0; row < 8; row++)
+        {
 
             int actualRow = (perspective == ChessGame.TeamColor.BLACK)
                     ? 7 - row   // flip vertically
@@ -73,7 +80,8 @@ public class BoardDrawer {
             ChessPiece[] displayRow = new ChessPiece[8];
 
             // flip columns for black
-            for (int col = 0; col < 8; col++) {
+            for (int col = 0; col < 8; col++)
+            {
                 displayRow[col] = (perspective == ChessGame.TeamColor.BLACK)
                         ? rawRow[7 - col]
                         : rawRow[col];
@@ -87,7 +95,8 @@ public class BoardDrawer {
         out.print(RESET_TEXT_COLOR);
         out.print(" ");
 
-        for (int col = 0; col < 8; col++) {
+        for (int col = 0; col < 8; col++)
+        {
             int displayCol = (perspective == ChessGame.TeamColor.BLACK)
                     ? 7 - col
                     : col;
@@ -98,7 +107,8 @@ public class BoardDrawer {
         out.println();
     }
 
-    private SquareColor printRow(ChessPiece[] row, SquareColor starting, int actualRow) {
+    private SquareColor printRow(ChessPiece[] row, SquareColor starting, int actualRow)
+    {
         SquareColor currentColor = starting;
 
         // print rank number
@@ -106,15 +116,18 @@ public class BoardDrawer {
         out.print(RESET_TEXT_COLOR);
         out.print(8 - actualRow);
 
-        for (int col = 0; col < 8; col++) {
+        for (int col = 0; col < 8; col++)
+        {
             out.print(squareColorCodes.get(currentColor));
 
             ChessPiece piece = row[col];
-            if (piece != null) {
+            if (piece != null)
+            {
                 out.print(SET_TEXT_COLOR_WHITE);
                 out.print(getPieceString(piece));
                 out.print(RESET_TEXT_COLOR);
-            } else {
+            } else
+            {
                 out.print(EMPTY); // empty square
             }
 
@@ -128,7 +141,8 @@ public class BoardDrawer {
         return flip(currentColor);
     }
 
-    private SquareColor flip(SquareColor c) {
+    private SquareColor flip(SquareColor c)
+    {
         return (c == SquareColor.LIGHT ? SquareColor.DARK : SquareColor.LIGHT);
     }
 }
