@@ -5,9 +5,22 @@ import io.javalin.websocket.*;
 import org.jetbrains.annotations.NotNull;
 import websocket.commands.UserGameCommand;
 import org.eclipse.jetty.websocket.api.Session;
+import dataaccess.DataAccessException;
+import service.AuthService;
+import websocket.messages.Notification;
+import java.io.IOException;
 
 public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsCloseHandler
 {
+
+    ConnectionManager connectionManager = new ConnectionManager();
+    AuthService authService;
+
+    public WebSocketHandler(AuthService authService)
+    {
+        this.authService = authService;
+    }
+
     @Override
     public void handleConnect(WsConnectContext ctx)
     {
@@ -23,10 +36,10 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             UserGameCommand command = new Gson().fromJson(ctx.message(), UserGameCommand.class);
             switch (command.commandType())
             {
-                case CONNECT -> connect(ctx.session);
+                case CONNECT -> connect(ctx.session, command);
                 case MAKE_MOVE -> makeMove(ctx.session);
             }
-        } catch (Exception ex)
+        } catch (IOException | DataAccessException ex)
         {
             ex.printStackTrace();
         }
@@ -38,9 +51,12 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         System.out.println("Websocket closed");
     }
 
-    private void connect(Session session)
+    private void connect(Session session, UserGameCommand command) throws IOException, DataAccessException
     {
-        System.out.println("Connect called");
+        // TODO: Update this to send a load board message to the new player and exclude that player from the notification
+        String username = authService.getUsernameFromToken(command.authToken());
+        connectionManager.addToGame(session, command.gameID(), username);
+        connectionManager.broadcast(null, new Notification("User " + username + " connected"), command.gameID());
     }
 
     private void makeMove(Session session)

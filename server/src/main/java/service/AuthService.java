@@ -24,6 +24,11 @@ public class AuthService extends Service
         return newToken;
     }
 
+    public String getUsernameFromToken(String token) throws DataAccessException
+    {
+        return daos.authDao.authenticateToken(token);
+    }
+
     public void logout(String token) throws DataAccessException, UserNotValidatedException
     {
         if (daos.authDao.authenticateToken(token) == null)
