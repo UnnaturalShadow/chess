@@ -8,8 +8,21 @@ import java.util.Objects;
  * Note: You can add to this class, but you should not alter the existing
  * methods.
  */
-public record UserGameCommand(CommandType commandType, String authToken, Integer gameID)
+public class UserGameCommand
 {
+
+    private final CommandType commandType;
+
+    private final String authToken;
+
+    private final Integer gameID;
+
+    public UserGameCommand(CommandType commandType, String authToken, Integer gameID)
+    {
+        this.commandType = commandType;
+        this.authToken = authToken;
+        this.gameID = gameID;
+    }
 
     public enum CommandType
     {
@@ -17,6 +30,21 @@ public record UserGameCommand(CommandType commandType, String authToken, Integer
         MAKE_MOVE,
         LEAVE,
         RESIGN
+    }
+
+    public CommandType getCommandType()
+    {
+        return commandType;
+    }
+
+    public String getAuthToken()
+    {
+        return authToken;
+    }
+
+    public Integer getGameID()
+    {
+        return gameID;
     }
 
 
@@ -27,18 +55,19 @@ public record UserGameCommand(CommandType commandType, String authToken, Integer
         {
             return true;
         }
-        if (!(o instanceof UserGameCommand(CommandType type, String token, Integer id)))
+        if (!(o instanceof UserGameCommand that))
         {
             return false;
         }
-        return commandType() == type &&
-                Objects.equals(authToken(), token) &&
-                Objects.equals(gameID(), id);
+        return getCommandType() == that.getCommandType() &&
+                Objects.equals(getAuthToken(), that.getAuthToken()) &&
+                Objects.equals(getGameID(), that.getGameID());
     }
 
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(commandType(), authToken(), gameID());
+
+        @Override
+        public int hashCode ()
+        {
+            return Objects.hash(getCommandType(), getAuthToken(), getGameID());
+        }
     }
-}

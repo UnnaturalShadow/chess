@@ -16,11 +16,6 @@ public class ConnectionManager
     public Map<Session, Integer> sessionsToGames = new HashMap<>(); // Maps a session to the game id that it is in
     public Map<Integer, Set<Session>> games = new HashMap<>(); // Maps a set of sessions to a game id
 
-    public void addSession(Session session, String userName)
-    {
-        sessions.put(session, userName);
-    }
-
     public void addToGame(Session session, int gameId, String userName)
     {
         sessionsToGames.put(session, gameId);
@@ -28,7 +23,7 @@ public class ConnectionManager
 
         if (!games.containsKey(gameId))
         {
-            new HashSet<>(Set.of(session));
+            games.put(gameId, new HashSet<>(Set.of(session)));
         } else
         {
             games.get(gameId).add(session);
