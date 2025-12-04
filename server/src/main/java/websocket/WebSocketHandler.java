@@ -15,6 +15,9 @@ import websocket.messages.LoadGame;
 import websocket.messages.ServerMessage;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
+import chess.ChessGame;
+import chess.ChessMove;
+import chess.InvalidMoveException;
 
 
 import java.io.IOException;
@@ -28,7 +31,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     UserService userService;
     Gson serializer = new Gson();
 
-    public WebSocketHandler(AuthService authService, GameService gameService)
+    public WebSocketHandler(AuthService authService, GameService gameService, UserService userService)
     {
         this.authService = authService;
         this.gameService = gameService;
@@ -89,8 +92,33 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         session.getRemote().sendString(serializer.toJson(message));
     }
 
-    private void makeMove(Session session, UserGameCommand command)
+    private void makeMove(Session session, MakeMoveCommand command) throws IOException, DataAccessException
     {
-        System.out.println("Make Move called");
+        String username = authService.getUsernameFromToken(command.getAuthToken());
+        ServerMessage message;
+        ChessGame game;
+        ChessMove move = command.getMove();
+        try
+        {
+            authService.validateWithToken(command.getAuthToken());
+            game = gameService.applyMove(gameService.getById(command.getGameID()), command.getMove(), command.getGameID(), command.getAuthToken());
+            connectionManager.broadcast(null, new LoadGame(game), command.getGameID());
+            connectionManager.broadcast(session, new Notification("User " + username + " made the move " + move), command.getGameID());
+        }
+        catch (UserNotValidatedException e)
+        {
+            message = new ErrorMessage("Error: Could not authenticate user");
+            session.getRemote().sendString(serializer.toJson(message));
+        }
+        catch (DataAccessException e)
+        {
+            message = new ErrorMessage("Error: Internal error");
+            session.getRemote().sendString(serializer.toJson(message));
+        }
+        catch (InvalidMoveException e)
+        {
+            message = new ErrorMessage("Error: Invalid move sent");
+            session.getRemote().sendString(serializer.toJson(message));
+        }
     }
 }

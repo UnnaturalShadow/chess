@@ -27,6 +27,14 @@ public class DatabaseGameDao extends GameDao
         return executeCommand(sqlStatement, request.gameName(), null, null, serializedGame);
     }
 
+    public void updateGame(int gameID, ChessGame updatedGame) throws DataAccessException
+    {
+        String serializedGame = serializer.toJson(updatedGame);
+
+        String sqlStatement = "UPDATE games SET game = ? WHERE idgames = ?";
+        executeCommand(sqlStatement, serializedGame, gameID);
+    }
+
 
     public GameData getGame(int gameID) throws DataAccessException
     {

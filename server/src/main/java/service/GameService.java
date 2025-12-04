@@ -11,6 +11,9 @@ import requestobjects.CreateResult;
 import requestobjects.JoinRequest;
 import requestobjects.ListResult;
 
+import chess.ChessMove;
+import chess.InvalidMoveException;
+
 import chess.ChessGame;
 
 import java.util.Objects;
@@ -52,6 +55,14 @@ public class GameService extends Service
         int id = daos.gameDao.create(request);
 
         return new CreateResult(id);
+    }
+
+    public ChessGame applyMove(ChessGame game, ChessMove move, int gameID, String token) throws DataAccessException, UserNotValidatedException, InvalidMoveException
+    {
+        if(daos.authDao.authenticateToken(token) == null){throw new UserNotValidatedException("Not validated");}
+        game.makeMove(move);
+        daos.gameDao.updateGame(gameID, game);
+        return game;
     }
 
     public void join(String token, JoinRequest request) throws UserNotValidatedException, AlreadyTakenException, DataAccessException

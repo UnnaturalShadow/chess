@@ -6,6 +6,7 @@ import dataaccess.exceptions.AlreadyTakenException;
 import model.GameData;
 import requestobjects.CreateRequest;
 import requestobjects.JoinRequest;
+import dataaccess.DataAccessException;
 
 import java.util.*;
 
@@ -28,6 +29,10 @@ public class MemoryGameDao extends GameDao
     public GameData getGame(int gameID)
     {
         return games.get(gameID);
+    }
+
+    public void updateGame(int gameID, ChessGame updateGame) throws DataAccessException
+    {
     }
 
     public List<GameData> list()
