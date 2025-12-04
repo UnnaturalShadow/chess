@@ -11,6 +11,8 @@ import requestobjects.CreateResult;
 import requestobjects.JoinRequest;
 import requestobjects.ListResult;
 
+import chess.ChessGame;
+
 import java.util.Objects;
 
 public class GameService extends Service
@@ -27,6 +29,18 @@ public class GameService extends Service
         {throw new UserNotValidatedException("Not validated");}
 
         return new ListResult(daos.gameDao.list());
+    }
+
+    public ChessGame getById(int id) throws DataAccessException
+    {
+        try
+        {
+            return daos.gameDao.getGame(id).game();
+        }
+        catch (Exception e)
+        {
+            throw new DataAccessException("Error: Could not get game with id " + id);
+        }
     }
 
     public CreateResult create(String token, CreateRequest request) throws DataAccessException, BadRequestException

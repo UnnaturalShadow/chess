@@ -7,6 +7,7 @@ import websocket.messages.ServerMessage;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 public class ConnectionManager
@@ -27,7 +28,7 @@ public class ConnectionManager
 
         if (!games.containsKey(gameId))
         {
-            games.put(gameId, Set.of(session));
+            new HashSet<>(Set.of(session));
         } else
         {
             games.get(gameId).add(session);

@@ -34,14 +34,16 @@ public class Server
     public Server()
     {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
-        webSocketHandler = new WebSocketHandler(authService);
+
+        webSocketHandler = new WebSocketHandler(authService, gameService);
+
         javalin.delete("/db", new AppService(daos)::clear)
                 .post("/user", userHandlers::create)
                 .post("/session", userHandlers::login)
                 .delete("/session", authHandlers::logout)
                 .post("/game", gameHandlers::create)
                 .get("/game", gameHandlers::list)
-                .put("/game", gameHandlers::join);
+                .put("/game", gameHandlers::join)
                 .ws("/ws", ws -> {
                     ws.onConnect(webSocketHandler);
                     ws.onMessage(webSocketHandler);
