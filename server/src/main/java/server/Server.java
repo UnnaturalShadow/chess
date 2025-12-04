@@ -14,6 +14,7 @@ import service.AppService;
 import service.AuthService;
 import service.GameService;
 import service.UserService;
+import websocket.WebSocketHandler;
 
 import java.util.Map;
 
@@ -28,11 +29,12 @@ public class Server
     GameService gameService = new GameService(daos);
     GameHandler gameHandlers = new GameHandler(gameService);
     DatabaseManager databaseManager = new DatabaseManager();
+    private final WebSocketHandler webSocketHandler;
 
     public Server()
     {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
-
+        webSocketHandler = new WebSocketHandler();
         javalin.delete("/db", new AppService(daos)::clear)
                 .post("/user", userHandlers::create)
                 .post("/session", userHandlers::login)
@@ -40,6 +42,11 @@ public class Server
                 .post("/game", gameHandlers::create)
                 .get("/game", gameHandlers::list)
                 .put("/game", gameHandlers::join);
+                .ws("/ws", ws -> {
+                    ws.onConnect(webSocketHandler);
+                    ws.onMessage(webSocketHandler);
+                    ws.onClose(webSocketHandler);
+                });
     }
 
     public int run(int desiredPort)
