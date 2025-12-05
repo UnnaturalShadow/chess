@@ -154,6 +154,10 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             {
                 throw new InvalidMoveException("Error: User who is not in the game tried to resign.");
             }
+            if (!gameData.game().isActive)
+            {
+                throw new InvalidMoveException("Error: Tried to resign, but the game is already over.");
+            }
 
             gameService.markGameAsInactive(command.getGameID());
             message = new Notification(username + " Has resigned.");
