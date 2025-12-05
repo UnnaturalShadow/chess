@@ -1,10 +1,13 @@
 package websocket;
 
+import chess.ChessMove;
 import com.google.gson.Gson;
+import websocket.commands.MakeMoveCommand;
+import websocket.commands.UserGameCommand;
 import exception.ResponseException;
 import jakarta.websocket.*;
 import jakarta.websocket.Endpoint;
-import websocket.commands.UserGameCommand;
+import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGame;
 import websocket.messages.Notification;
 import websocket.messages.ServerMessage;
@@ -50,6 +53,7 @@ public class WebSocketFacade extends Endpoint
                     {
                         case LOAD_GAME -> notificationHandler.loadGame(new Gson().fromJson(message, LoadGame.class));
                         case NOTIFICATION -> notificationHandler.notify(new Gson().fromJson(message, Notification.class));
+                        case ERROR -> notificationHandler.error(new Gson().fromJson(message, ErrorMessage.class));
                     }
                 }
             });
@@ -59,11 +63,26 @@ public class WebSocketFacade extends Endpoint
         }
     }
 
-    public void playGame(String token, int gameID) throws ResponseException {
-        try {
-            var command = new UserGameCommand(UserGameCommand.CommandType.CONNECT, token, gameID);
+    public void sendCommand(UserGameCommand.CommandType type, String token, int gameID) throws ResponseException
+    {
+        try
+        {
+            var command = new UserGameCommand(type, token, gameID);
             this.session.getBasicRemote().sendText(new Gson().toJson(command));
-        } catch (IOException ex) {
+        } catch (IOException ex)
+        {
+            throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
+        }
+    }
+
+    public void sendMakeMoveCommand(String token, int gameID, ChessMove move) throws ResponseException
+    {
+        try
+        {
+            var command = new MakeMoveCommand(UserGameCommand.CommandType.MAKE_MOVE, token, gameID, move);
+            this.session.getBasicRemote().sendText(new Gson().toJson(command));
+        } catch (IOException ex)
+        {
             throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
         }
     }

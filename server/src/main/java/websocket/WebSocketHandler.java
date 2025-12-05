@@ -1,31 +1,30 @@
 package websocket;
 
-import com.google.gson.Gson;
-import io.javalin.websocket.*;
-import org.jetbrains.annotations.NotNull;
-import org.eclipse.jetty.websocket.api.Session;
-import dataaccess.DataAccessException;
-import dataaccess.exceptions.UserNotValidatedException;
-import service.AuthService;
-import service.GameService;
-import service.UserService;
-import websocket.messages.Notification;
-import websocket.messages.ErrorMessage;
-import websocket.messages.LoadGame;
-import websocket.messages.ServerMessage;
-import websocket.commands.MakeMoveCommand;
-import websocket.commands.UserGameCommand;
 import chess.ChessGame;
 import chess.ChessMove;
 import chess.InvalidMoveException;
+import com.google.gson.Gson;
+import dataaccess.DataAccessException;
+import dataaccess.exceptions.UserNotValidatedException;
+import io.javalin.websocket.*;
 import model.GameData;
+import org.jetbrains.annotations.NotNull;
+import service.AuthService;
+import service.GameService;
+import service.UserService;
+import websocket.commands.MakeMoveCommand;
+import websocket.commands.UserGameCommand;
+import org.eclipse.jetty.websocket.api.Session;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGame;
+import websocket.messages.Notification;
+import websocket.messages.ServerMessage;
 
 import java.io.IOException;
 import java.util.Objects;
 
 public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsCloseHandler
 {
-
     ConnectionManager connectionManager = new ConnectionManager();
     AuthService authService;
     GameService gameService;
@@ -76,6 +75,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     {
         String username = authService.getUsernameFromToken(command.getAuthToken());
         connectionManager.addToGame(session, command.getGameID(), username);
+
         ServerMessage message;
         try
         {
@@ -92,6 +92,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             message = new ErrorMessage("Error: Could not authenticate user");
         }
         session.getRemote().sendString(serializer.toJson(message));
+
     }
 
     private void makeMove(Session session, MakeMoveCommand command) throws IOException, DataAccessException
@@ -123,6 +124,18 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
             connectionManager.broadcast(null, message, command.getGameID());
             connectionManager.broadcast(session, new Notification("User " + username + " made the move " + move), command.getGameID());
+
+            if(game.isInStalemate(game.getTeamTurn()))
+            {
+                connectionManager.broadcast(null, new Notification("Game over: Stalemate"), command.getGameID());
+            }
+            if(game.isInCheckmate(game.getTeamTurn()))
+            {
+                connectionManager.broadcast(null, new Notification("Game over: Checkmate"), command.getGameID());
+            } else if(game.isInCheck(game.getTeamTurn()))
+            {
+                connectionManager.broadcast(null, new Notification("Check!"), command.getGameID());
+            }
         }
         catch (UserNotValidatedException e)
         {
@@ -154,13 +167,14 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             {
                 throw new InvalidMoveException("Error: User who is not in the game tried to resign.");
             }
+
             if (!gameData.game().isActive)
             {
                 throw new InvalidMoveException("Error: Tried to resign, but the game is already over.");
             }
 
             gameService.markGameAsInactive(command.getGameID());
-            message = new Notification(username + " Has resigned.");
+            message = new Notification(username + " has resigned.");
             connectionManager.broadcast(null, message, command.getGameID());
         }
         catch (InvalidMoveException e)
@@ -171,7 +185,8 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     }
 
-    public void leave(Session session, UserGameCommand command) throws IOException {
+    public void leave(Session session, UserGameCommand command) throws IOException
+    {
         ServerMessage message;
         try
         {
@@ -180,7 +195,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
             gameService.removePlayer(username, command.getGameID());
             connectionManager.remove(session);
-            message = new Notification(username + " Has left the game.");
+            message = new Notification(username + " has left the game.");
             connectionManager.broadcast(session, message, command.getGameID());
         }
         catch (Exception e)

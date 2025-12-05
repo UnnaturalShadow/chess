@@ -1,24 +1,25 @@
 package chess;
 
+import java.util.Objects;
+
 /**
  * Represents moving a chess piece on a chessboard
  * <p>
  * Note: You can add to this class, but you may not alter
  * signature of the existing methods.
  */
-import java.util.Objects;
 public class ChessMove
 {
+    ChessPosition startPosition;
+    ChessPosition endPosition;
+    ChessPiece.PieceType promotionPiece;
 
-    private ChessPosition start;
-    private ChessPosition end;
-    private ChessPiece.PieceType promotion;
-
-    public ChessMove(ChessPosition startPosition, ChessPosition endPosition, ChessPiece.PieceType promotionPiece)
+    public ChessMove(ChessPosition startPosition, ChessPosition endPosition,
+                     ChessPiece.PieceType promotionPiece)
     {
-        this.start = startPosition;
-        this.end = endPosition;
-        this.promotion = promotionPiece;
+        this.startPosition = startPosition;
+        this.endPosition = endPosition;
+        this.promotionPiece = promotionPiece;
     }
 
     /**
@@ -26,7 +27,7 @@ public class ChessMove
      */
     public ChessPosition getStartPosition()
     {
-        return this.start;
+        return this.startPosition;
     }
 
     /**
@@ -34,7 +35,7 @@ public class ChessMove
      */
     public ChessPosition getEndPosition()
     {
-        return this.end;
+        return this.endPosition;
     }
 
     /**
@@ -45,27 +46,19 @@ public class ChessMove
      */
     public ChessPiece.PieceType getPromotionPiece()
     {
-        return this.promotion;
+        return this.promotionPiece;
     }
 
-    @Override
-    public String toString()
+    public void setPromotionPiece(ChessPiece.PieceType type)
     {
-        String str = "";
-        str += "(" + start.getRow() + ", " + start.getColumn() + ") (" + end.getRow() + ", " + end.getColumn() +")";
-        return str;
+        this.promotionPiece = type;
     }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getStartPosition(), getEndPosition(), getPromotionPiece());
-    }
-
 
     @Override
     public boolean equals(Object o)
     {
-        if (this == o) {
+        if (this == o)
+        {
             return true;
         }
         if (o == null || getClass() != o.getClass())
@@ -73,8 +66,19 @@ public class ChessMove
             return false;
         }
         ChessMove chessMove = (ChessMove) o;
-        return Objects.equals(getStartPosition(), chessMove.getStartPosition()) &&
-                Objects.equals(getEndPosition(), chessMove.getEndPosition()) &&
-                getPromotionPiece() == chessMove.getPromotionPiece();
+        return Objects.equals(getStartPosition(), chessMove.getStartPosition()) && Objects.equals(getEndPosition(),
+                chessMove.getEndPosition()) && getPromotionPiece() == chessMove.getPromotionPiece();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(getStartPosition(), getEndPosition(), getPromotionPiece());
+    }
+
+    @Override
+    public String toString()
+    {
+        return "["+startPosition.toString()+", "+endPosition.toString()+"]";
     }
 }

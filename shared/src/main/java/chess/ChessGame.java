@@ -38,6 +38,33 @@ public class ChessGame
         BLACK
     }
 
+    public ArrayList<ChessPosition> getPiecePositions(TeamColor teamColor)
+    {
+        ArrayList<ChessPosition> positions = new ArrayList<>();
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                ChessPosition position = new ChessPosition(i+1, j+1);
+                ChessPiece piece = this.board.getPiece(position);
+                if (teamColor != null)
+                {
+                    if (piece != null && piece.getTeamColor() == teamColor)
+                    {
+                        positions.add(position);
+                    }
+                }
+                else if (piece != null)
+                {
+                    positions.add(position);
+                }
+
+            }
+        }
+
+        return positions;
+    }
+
     public Collection<ChessMove> validMoves(ChessPosition startPosition)
     {
         ChessPiece piece = board.getPiece(startPosition);

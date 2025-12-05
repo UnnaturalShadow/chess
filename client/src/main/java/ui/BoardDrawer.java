@@ -1,150 +1,132 @@
 package ui;
 
-import chess.ChessGame;
+import chess.*;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
 
 import static ui.EscapeSequences.*;
 
-public class BoardDrawer {
+public class BoardDrawer
+{
+    public enum SquareColor
+    {
+        LIGHT,
+        DARK,
+        HIGHLIGHT
+    }
 
-    private static final int BOARD_SIZE_IN_SQUARES = 8;
+    private final Map<SquareColor, String> squareColorCodes = Map.of(
+            SquareColor.DARK, SET_BG_COLOR_BLACK,
+            SquareColor.LIGHT, SET_BG_COLOR_LIGHT_GREY,
+            SquareColor.HIGHLIGHT, SET_BG_COLOR_GREEN
+    );
 
-    // Board arrays with embedded ANSI text color codes
-    private static final String[][] WHITE_CHESS_START  = {
-            {SET_TEXT_COLOR_BLACK + " R " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " Q " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " K " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " R " + RESET_TEXT_COLOR},
-            {SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR},
-            {SET_TEXT_COLOR_RED + " R " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " Q " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " K " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " R " + RESET_TEXT_COLOR}
-    };
+    private final Map<ChessPiece.PieceType, String> whiteTypeToString = Map.of(
+            ChessPiece.PieceType.KING, WHITE_KING,
+            ChessPiece.PieceType.QUEEN, WHITE_QUEEN,
+            ChessPiece.PieceType.BISHOP, WHITE_BISHOP,
+            ChessPiece.PieceType.KNIGHT, WHITE_KNIGHT,
+            ChessPiece.PieceType.ROOK, WHITE_ROOK,
+            ChessPiece.PieceType.PAWN, WHITE_PAWN
+    );
+    private final Map<ChessPiece.PieceType, String> blackTypeToString = Map.of(
+            ChessPiece.PieceType.KING, BLACK_KING,
+            ChessPiece.PieceType.QUEEN, BLACK_QUEEN,
+            ChessPiece.PieceType.BISHOP, BLACK_BISHOP,
+            ChessPiece.PieceType.KNIGHT, BLACK_KNIGHT,
+            ChessPiece.PieceType.ROOK, BLACK_ROOK,
+            ChessPiece.PieceType.PAWN, BLACK_PAWN
+    );
 
-    private static final String[][] BLACK_CHESS_START= {
-            {SET_TEXT_COLOR_RED + " R " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " K " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " Q " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " R " + RESET_TEXT_COLOR},
-            {SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_RED + " P " + RESET_TEXT_COLOR},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {"   ","   ","   ","   ","   ","   ","   ","   "},
-            {SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " P " + RESET_TEXT_COLOR},
-            {SET_TEXT_COLOR_BLACK + " R " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " K " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " Q " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " B " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " N " + RESET_TEXT_COLOR,
-                    SET_TEXT_COLOR_BLACK + " R " + RESET_TEXT_COLOR}
-    };
 
-    public void render(ChessGame.TeamColor teamColor){
-        var out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
-        String whiteHeader = "    a  b  c  d  e  f  g  h    ";
-        String blackHeader = "    h  g  f  e  d  c  b  a    ";
 
-        if (teamColor == ChessGame.TeamColor.WHITE){
-            drawHeader(out, whiteHeader);
-            drawChessBoard(out, WHITE_CHESS_START);
-            drawHeader(out, whiteHeader);
-        } else if (teamColor == ChessGame.TeamColor.BLACK) {
-            drawHeader(out, blackHeader);
-            drawChessBoard(out, BLACK_CHESS_START);
-            drawHeader(out, blackHeader);
+    private String getPieceString(ChessPiece piece)
+    {
+        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE)
+        {
+            return whiteTypeToString.get(piece.getPieceType());
+        } else
+        {
+            return blackTypeToString.get(piece.getPieceType());
         }
     }
 
-    private static void drawHeader(PrintStream out, String headerString) {
-        out.print(SET_BG_COLOR_BLACK);
-        out.print(SET_TEXT_COLOR_WHITE);
-        out.print(headerString);
-        out.print(RESET_BG_COLOR);
-        out.print(SET_TEXT_COLOR_BLACK);
-        out.println();
+    PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
+    private final ChessBoard board;
+    private final ChessGame.TeamColor perspective;
+    private final Set<ChessPosition> highlightedPositions;
+    public BoardDrawer(ChessBoard board, ChessGame.TeamColor perspective, Set<ChessPosition> highlightedPositions)
+    {
+        this.board = board;
+        this.perspective = perspective;
+        this.highlightedPositions = highlightedPositions;
     }
 
-    private static void drawChessBoard(PrintStream out, String[][] boardArray) {
-        for (int row = 0; row < BOARD_SIZE_IN_SQUARES; ++row) {
+    public void print()
+    {
+        out.print(SET_TEXT_COLOR_WHITE);
+        out.print("\n");
+        SquareColor startingSquareColor = SquareColor.LIGHT;
+        for (int i = 0; i < 8; i++)
+        {
+            int rowId = perspective == ChessGame.TeamColor.BLACK ? i: (7-i);
 
-            // Left-side number
-            out.print(SET_BG_COLOR_BLACK);
-            out.print(SET_TEXT_COLOR_WHITE);
-            out.print(" " + (8 - row) + " ");
+            ChessPiece[] row = board.getTiles()[rowId];
+            startingSquareColor = printRowOfSquares(row, startingSquareColor, rowId);
+        }
+        out.print(RESET_BG_COLOR + " ");
+        for (int i = 0; i < 8; i++)
+        {
+            int rowId = perspective == ChessGame.TeamColor.BLACK ? (7-i): i;
+            out.print("\u2003" + (char) (rowId + 97) + " ");
+        }
+        out.print("\n");
+    }
 
-            for (int col = 0; col < BOARD_SIZE_IN_SQUARES; ++col) {
-                boolean isWhiteSquare = (row + col) % 2 == 0;
+    SquareColor printRowOfSquares(ChessPiece[] pieces, SquareColor startingSquareColor, int row)
+    {
+        var out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
+        SquareColor currentColor = startingSquareColor;
 
-                if (isWhiteSquare){
-                    out.print(RESET_BG_COLOR);
-                } else {
-                    out.print(SET_BG_COLOR_BLUE);
-                }
-
-                // print the piece (already has color embedded)
-                out.print(boardArray[row][col]);
+        out.print(RESET_BG_COLOR);
+        out.print(row+1);
+        for (int width = 0; width < 8; width++)
+        {
+            int colIndex = perspective == ChessGame.TeamColor.WHITE? width: 7-width;
+            if (highlightedPositions != null && highlightedPositions.contains(new ChessPosition(row + 1, colIndex + 1)))
+            {
+                out.print(squareColorCodes.get(SquareColor.HIGHLIGHT));
+            } else
+            {
+                out.print(squareColorCodes.get(currentColor));
             }
 
-            // Right-side number
-            out.print(SET_BG_COLOR_BLACK);
-            out.print(SET_TEXT_COLOR_WHITE);
-            out.print(" " + (8 - row) + " ");
+            if (pieces[colIndex] != null)
+            {
+                out.print(getPieceString(pieces[colIndex]));
+            } else
+            {
+                out.print(EMPTY);
+            }
 
-            out.print(RESET_BG_COLOR);
-            out.print(SET_TEXT_COLOR_BLACK);
-            out.println();
+            currentColor = swapColor(currentColor);
+        }
+
+        out.print(RESET_BG_COLOR + "\n");
+        return swapColor(currentColor);
+    }
+
+    private SquareColor swapColor(SquareColor currentColor)
+    {
+        if (currentColor == SquareColor.LIGHT)
+        {
+            return SquareColor.DARK;
+        } else
+        {
+            return SquareColor.LIGHT;
         }
     }
 }
