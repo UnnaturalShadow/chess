@@ -47,7 +47,6 @@ public class UserGameCommand
         return gameID;
     }
 
-
     @Override
     public boolean equals(Object o)
     {
@@ -64,10 +63,9 @@ public class UserGameCommand
                 Objects.equals(getGameID(), that.getGameID());
     }
 
-
-        @Override
-        public int hashCode ()
-        {
-            return Objects.hash(getCommandType(), getAuthToken(), getGameID());
-        }
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(getCommandType(), getAuthToken(), getGameID());
     }
+}
