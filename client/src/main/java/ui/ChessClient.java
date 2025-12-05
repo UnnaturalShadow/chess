@@ -45,7 +45,7 @@ public class ChessClient implements NotificationHandler
 
     public void notify(Notification message)
     {
-        System.out.println(SET_TEXT_COLOR_GREEN + message.message);
+        System.out.println(SET_TEXT_COLOR_BLUE + message.message);
         printPrompt();
     }
 
@@ -135,7 +135,7 @@ public class ChessClient implements NotificationHandler
 
     private void printPrompt()
     {
-        System.out.print(RESET_TEXT_COLOR + ">>> " + SET_TEXT_COLOR_GREEN);
+        System.out.print(RESET_TEXT_COLOR + ">>> " + SET_TEXT_COLOR_BLUE);
     }
 
     private String register()
@@ -337,7 +337,7 @@ public class ChessClient implements NotificationHandler
             return "Could not leave the game. Please try again.";
         }
 
-        return "";
+        return "You left the game.";
     }
 
     public String resign()
@@ -361,7 +361,7 @@ public class ChessClient implements NotificationHandler
 
     public String makeMove()
     {
-        ChessPosition position = getPosition("Which piece would you like to move?" +
+        ChessPosition position = getPosition(SET_TEXT_COLOR_BLUE + "Which piece would you like to move?" +
                 " (Use the number to the left of the piece position)", state.perspective);
         ArrayList<ChessMove> moves = new ArrayList<>(state.currentGame.validMoves(position));
         Map<Integer, ChessMove> possibleMoves = new HashMap<>();
