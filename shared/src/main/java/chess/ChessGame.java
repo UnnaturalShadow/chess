@@ -13,6 +13,7 @@ public class ChessGame
 {
     private ChessBoard board;
     private TeamColor turn;
+    public boolean isActive = true;
 
     public ChessGame()
     {
@@ -98,12 +99,17 @@ public class ChessGame
         ChessPiece toMove = board.getPiece(move.getStartPosition());
         if (toMove == null || toMove.getTeamColor() != turn || !canMakeMove(move))
         {
-            throw new InvalidMoveException("Not a legal move");
+            throw new InvalidMoveException("Error: Not a valid move");
         }
 
         board.removePiece(move.getStartPosition());
         applyMovePiece(move, toMove);
         changeTurn();
+
+        if (isInStalemate(toMove.getTeamColor()) || isInCheckmate(toMove.getTeamColor()))
+        {
+            isActive = false;
+        }
     }
 
     public void changeTurn()

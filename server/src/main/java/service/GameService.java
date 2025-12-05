@@ -10,6 +10,7 @@ import requestobjects.CreateRequest;
 import requestobjects.CreateResult;
 import requestobjects.JoinRequest;
 import requestobjects.ListResult;
+import model.GameData;
 
 import chess.ChessMove;
 import chess.InvalidMoveException;
@@ -34,11 +35,11 @@ public class GameService extends Service
         return new ListResult(daos.gameDao.list());
     }
 
-    public ChessGame getById(int id) throws DataAccessException
+    public GameData getById(int id) throws DataAccessException
     {
         try
         {
-            return daos.gameDao.getGame(id).game();
+            return daos.gameDao.getGame(id);
         }
         catch (Exception e)
         {
@@ -60,6 +61,7 @@ public class GameService extends Service
     public ChessGame applyMove(ChessGame game, ChessMove move, int gameID, String token) throws DataAccessException, UserNotValidatedException, InvalidMoveException
     {
         if(daos.authDao.authenticateToken(token) == null){throw new UserNotValidatedException("Not validated");}
+        if(!game.isActive){ throw new InvalidMoveException("Error: Game is over");}
         game.makeMove(move);
         daos.gameDao.updateGame(gameID, game);
         return game;
