@@ -55,6 +55,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             {
                 case CONNECT -> connect(ctx.session, command);
                 case MAKE_MOVE -> makeMove(ctx.session, new Gson().fromJson(ctx.message(), MakeMoveCommand.class));
+                case RESIGN -> resign(ctx.session, command);
             }
         }
         catch (IOException | DataAccessException ex)
@@ -138,5 +139,31 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             message = new ErrorMessage(e.getMessage());
             session.getRemote().sendString(serializer.toJson(message));
         }
+    }
+
+    public void resign(Session session, UserGameCommand command) throws DataAccessException, IOException
+    {
+        ServerMessage message;
+        try
+        {
+            authService.validateWithToken(command.getAuthToken());
+            GameData gameData = gameService.getById(command.getGameID());
+            String username = authService.getUsernameFromToken(command.getAuthToken());
+
+            if (!Objects.equals(gameData.blackUsername(), username) && !Objects.equals(gameData.whiteUsername(), username))
+            {
+                throw new InvalidMoveException("Error: User who is not in the game tried to resign.");
+            }
+
+            gameService.markGameAsInactive(command.getGameID());
+            message = new Notification(username + " Has resigned.");
+            connectionManager.broadcast(null, message, command.getGameID());
+        }
+        catch (InvalidMoveException e)
+        {
+            message = new ErrorMessage(e.getMessage());
+            session.getRemote().sendString(serializer.toJson(message));
+        }
+
     }
 }

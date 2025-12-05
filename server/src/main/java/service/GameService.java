@@ -58,6 +58,13 @@ public class GameService extends Service
         return new CreateResult(id);
     }
 
+    public void markGameAsInactive(int gameID) throws DataAccessException
+    {
+        ChessGame game = getById(gameID).game();
+        game.isActive = false;
+        daos.gameDao.updateGame(gameID, game);
+    }
+
     public ChessGame applyMove(ChessGame game, ChessMove move, int gameID, String token) throws DataAccessException, UserNotValidatedException, InvalidMoveException
     {
         if(daos.authDao.authenticateToken(token) == null){throw new UserNotValidatedException("Not validated");}
