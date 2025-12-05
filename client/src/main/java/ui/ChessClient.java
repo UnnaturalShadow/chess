@@ -214,7 +214,6 @@ public class ChessClient implements NotificationHandler
             return "Failed to create new game";
         }
     }
-
     private String listGames()
     {
         try
@@ -222,7 +221,6 @@ public class ChessClient implements NotificationHandler
             state.games = server.listGame(authToken).games();
             StringBuilder gameStrings = new StringBuilder();
             gameStrings.append("Games\n");
-
             for (int i = 0; i < state.games.size(); i++)
             {
                 GameData game = state.games.get(i);
@@ -243,11 +241,9 @@ public class ChessClient implements NotificationHandler
             return "Failed to get games. Check your connection to the server and try again.";
         }
     }
-
     private String playGame()
     {
         GameData gameData = getGameFromUser();
-
         System.out.println("Which color would you like to join? (W)hite or (B)lack?");
         printPrompt();
         String line = scanner.nextLine();
@@ -265,7 +261,6 @@ public class ChessClient implements NotificationHandler
         {
             throw new IllegalArgumentException("Can't parse input. Accepted inputs are \"W\" or \"B\"");
         }
-
         try
         {
             server.joinGame(authToken, new JoinRequest(color, gameData.gameID()));
@@ -276,14 +271,12 @@ public class ChessClient implements NotificationHandler
         {
             return "Could not join game. "+ e.getMessage().replaceFirst(".*Error: ", "");
         }
-
         state.currentGame = gameData.game();
         state.loggedInState = State.LoggedInState.INGAME;
         state.currentGameId = gameData.gameID();
 
         return "";
     }
-
     private String observeGame()
     {
         try
@@ -301,7 +294,6 @@ public class ChessClient implements NotificationHandler
             return "Could not join game. "+ e.getMessage().replaceFirst(".*Error: ", "");
         }
     }
-
     private GameData getGameFromUser()
     {
         try
@@ -321,7 +313,6 @@ public class ChessClient implements NotificationHandler
             throw new RuntimeException("Could not find game with given id");
         }
     }
-
     public String leave()
     {
         try
@@ -339,7 +330,6 @@ public class ChessClient implements NotificationHandler
 
         return "You left the game.";
     }
-
     public String resign()
     {
         try
@@ -358,7 +348,6 @@ public class ChessClient implements NotificationHandler
         }
         return "";
     }
-
     public String makeMove()
     {
         ChessPosition position = getPosition(SET_TEXT_COLOR_BLUE + "Which piece would you like to move?" +
@@ -423,7 +412,6 @@ public class ChessClient implements NotificationHandler
         }
         return "";
     }
-
     private String highlightMoves()
     {
         try
@@ -444,7 +432,6 @@ public class ChessClient implements NotificationHandler
             return e.getMessage();
         }
     }
-
     private ChessPosition getPosition(String message, ChessGame.TeamColor teamColor)
     {
         var positions = state.currentGame.getPiecePositions(teamColor);
@@ -464,13 +451,11 @@ public class ChessClient implements NotificationHandler
             throw new IllegalArgumentException(SET_TEXT_COLOR_RED + "Invalid input. Must be one of the numbers printed above.");
         }
     }
-
     private String printBoard(Set<ChessPosition> positionsToHighlight)
     {
         new BoardDrawer(state.currentGame.getBoard(), state.perspective, positionsToHighlight).print();
         return "";
     }
-
     private String help()
     {
         if (state.loggedInState == State.LoggedInState.SIGNEDOUT)
