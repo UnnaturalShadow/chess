@@ -65,7 +65,8 @@ public class GameService extends Service
         daos.gameDao.updateGame(gameID, game);
     }
 
-    public ChessGame applyMove(ChessGame game, ChessMove move, int gameID, String token) throws DataAccessException, UserNotValidatedException, InvalidMoveException
+    public ChessGame applyMove(ChessGame game, ChessMove move, int gameID, String token) throws DataAccessException,
+            UserNotValidatedException, InvalidMoveException
     {
         if(daos.authDao.authenticateToken(token) == null){throw new UserNotValidatedException("Not validated");}
         if(!game.isActive){ throw new InvalidMoveException("Error: Game is over");}
@@ -87,5 +88,21 @@ public class GameService extends Service
         }
 
         daos.gameDao.join(request, username);
+    }
+
+    public void removePlayer(String username, int gameID) throws DataAccessException, IllegalArgumentException
+    {
+        GameData game = getById(gameID);
+        String whichUsername;
+        if (Objects.equals(username, game.whiteUsername()))
+        {
+            whichUsername = "whiteUsername";
+            daos.gameDao.removePlayer(gameID, whichUsername);
+        }
+        else if(Objects.equals(username, game.blackUsername()))
+        {
+            whichUsername = "blackUsername";
+            daos.gameDao.removePlayer(gameID, whichUsername);
+        }
     }
 }

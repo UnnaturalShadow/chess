@@ -16,4 +16,5 @@ public abstract class GameDao extends Dao
     abstract public void join(JoinRequest request, String username) throws AlreadyTakenException, DataAccessException;
     abstract public void clear() throws DataAccessException;
     abstract public void updateGame(int gameID, ChessGame updateGame) throws DataAccessException;
+    abstract public void removePlayer(int gameID, String whichUsername) throws DataAccessException;
 }

@@ -56,6 +56,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                 case CONNECT -> connect(ctx.session, command);
                 case MAKE_MOVE -> makeMove(ctx.session, new Gson().fromJson(ctx.message(), MakeMoveCommand.class));
                 case RESIGN -> resign(ctx.session, command);
+                case LEAVE -> leave(ctx.session, command);
             }
         }
         catch (IOException | DataAccessException ex)
@@ -73,7 +74,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     private void connect(Session session, UserGameCommand command) throws IOException, DataAccessException
     {
-        // TODO: Update this to send a load board message to the new player and exclude that player from the notification
         String username = authService.getUsernameFromToken(command.getAuthToken());
         connectionManager.addToGame(session, command.getGameID(), username);
         ServerMessage message;
@@ -169,5 +169,22 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             session.getRemote().sendString(serializer.toJson(message));
         }
 
+    }
+
+    public void leave(Session session, UserGameCommand command) throws IOException {
+        ServerMessage message;
+        try
+        {
+            authService.validateWithToken(command.getAuthToken());
+            String username = authService.getUsernameFromToken(command.getAuthToken());
+
+            gameService.removePlayer(username, command.getGameID());
+            connectionManager.remove(session);
+            message = new Notification(username + " Has left the game.");
+            connectionManager.broadcast(session, message, command.getGameID());
+        }
+        catch (Exception e)
+        {
+        }
     }
 }

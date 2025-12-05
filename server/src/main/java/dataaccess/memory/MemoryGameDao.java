@@ -31,9 +31,8 @@ public class MemoryGameDao extends GameDao
         return games.get(gameID);
     }
 
-    public void updateGame(int gameID, ChessGame updateGame) throws DataAccessException
-    {
-    }
+    public void updateGame(int gameID, ChessGame updateGame) throws DataAccessException {}
+    public void removePlayer(int gameID, String whichUsername) throws DataAccessException {}
 
     public List<GameData> list()
     {
