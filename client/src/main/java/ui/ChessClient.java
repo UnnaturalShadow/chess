@@ -241,6 +241,7 @@ public class ChessClient implements NotificationHandler
             return "Failed to get games. Check your connection to the server and try again.";
         }
     }
+
     private String playGame()
     {
         GameData gameData = getGameFromUser();
@@ -275,7 +276,7 @@ public class ChessClient implements NotificationHandler
         state.loggedInState = State.LoggedInState.INGAME;
         state.currentGameId = gameData.gameID();
 
-        return "";
+        return "Joined game as " + color;
     }
     private String observeGame()
     {
@@ -348,32 +349,36 @@ public class ChessClient implements NotificationHandler
         }
         return "";
     }
-    public String makeMove()
-    {
-        ChessPosition position = getPosition(SET_TEXT_COLOR_BLUE + "Which piece would you like to move?" +
-                " (Use the number to the left of the piece position)", state.perspective);
+    public String makeMove() {
+        ChessPosition position = getPosition(
+                SET_TEXT_COLOR_BLUE + "Which piece would you like to move?" +
+                        " (Use the number to the left of the piece position)",
+                state.perspective
+        );
+
         ArrayList<ChessMove> moves = new ArrayList<>(state.currentGame.validMoves(position));
         Map<Integer, ChessMove> possibleMoves = new HashMap<>();
-        for (int i = 0; i < moves.size(); i++)
-        {
+
+        // Print moves in standard chess notation
+        for (int i = 0; i < moves.size(); i++) {
             ChessMove move = moves.get(i);
-            System.out.println(i+1 + ": " + move.getEndPosition());
+            System.out.println((i + 1) + ": " + toChessNotation(move.getStartPosition()) + " -> " + toChessNotation(move.getEndPosition()));
             possibleMoves.put(i, move);
         }
 
         ChessMove selectedMove;
-        try
-        {
+        try {
             System.out.println("To which square do you want to move? (Use the number to the left of the piece position)");
             printPrompt();
             selectedMove = possibleMoves.get(Integer.parseInt(scanner.nextLine()) - 1);
 
+            // Handle pawn promotion
             if ((selectedMove.getEndPosition().getRow() == 1 || selectedMove.getEndPosition().getRow() == 8) &&
-                    state.currentGame.getBoard().getPiece(new ChessPosition(selectedMove.getStartPosition().getRow(),
-                            selectedMove.getEndPosition().getColumn())).getPieceType() == ChessPiece.PieceType.PAWN)
-            {
-                try
-                {
+                    state.currentGame.getBoard().getPiece(
+                            new ChessPosition(selectedMove.getStartPosition().getRow(),
+                                    selectedMove.getEndPosition().getColumn())
+                    ).getPieceType() == ChessPiece.PieceType.PAWN) {
+                try {
                     System.out.println("Which type would you like to promote to?");
                     System.out.println("1: Queen");
                     System.out.println("2: Rook");
@@ -390,26 +395,22 @@ public class ChessClient implements NotificationHandler
                     ChessPiece.PieceType type = intToType.get(Integer.parseInt(scanner.nextLine()));
 
                     selectedMove.setPromotionPiece(type);
-                }
-                catch (Exception e)
-                {
-                    throw new IllegalArgumentException(SET_TEXT_COLOR_RED + "Invalid input. Must be one of the numbers printed above.");
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(
+                            SET_TEXT_COLOR_RED + "Invalid input. Must be one of the numbers printed above."
+                    );
                 }
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             return SET_TEXT_COLOR_RED + "Invalid input. Must be one of the numbers printed above.";
         }
 
-        try
-        {
+        try {
             ws.sendMakeMoveCommand(authToken, state.currentGameId, selectedMove);
-        }
-        catch (ResponseException e)
-        {
+        } catch (ResponseException e) {
             return "Could not make move. Please try again.";
         }
+
         return "";
     }
     private String highlightMoves()
@@ -438,7 +439,8 @@ public class ChessClient implements NotificationHandler
         for (int i = 0; i < positions.size(); i++)
         {
             ChessPosition position = positions.get(i);
-            System.out.println(i+1 + ": " + position);
+            // Print in standard chess notation
+            System.out.println((i + 1) + ": " + toChessNotation(position));
         }
         try
         {
@@ -451,6 +453,13 @@ public class ChessClient implements NotificationHandler
             throw new IllegalArgumentException(SET_TEXT_COLOR_RED + "Invalid input. Must be one of the numbers printed above.");
         }
     }
+
+    private String toChessNotation(ChessPosition pos) {
+        char file = (char) ('a' + pos.getColumn() - 1); // column 1->'a', 2->'b', etc.
+        int rank = pos.getRow(); // row stays the same
+        return "" + file + rank;
+    }
+
     private String printBoard(Set<ChessPosition> positionsToHighlight)
     {
         new BoardDrawer(state.currentGame.getBoard(), state.perspective, positionsToHighlight).print();
