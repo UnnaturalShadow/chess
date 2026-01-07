@@ -12,9 +12,11 @@ public class ChessGame
 {
 
     private TeamColor turn;
+    private ChessBoard table;
     public ChessGame()
     {
         turn = TeamColor.WHITE;
+        table = new ChessBoard();
     }
 
     /**
@@ -22,7 +24,7 @@ public class ChessGame
      */
     public TeamColor getTeamTurn()
     {
-        throw new RuntimeException("Not implemented");
+        return turn;
     }
 
     /**
@@ -53,7 +55,8 @@ public class ChessGame
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition)
     {
-        throw new RuntimeException("Not implemented");
+        ChessPiece curr = table.getPiece(startPosition);
+        return table.getPiece(startPosition).pieceMoves(table, table.getPiece(startPosition));
     }
 
     /**
@@ -108,7 +111,7 @@ public class ChessGame
      */
     public void setBoard(ChessBoard board)
     {
-        throw new RuntimeException("Not implemented");
+        table = board;
     }
 
     /**
@@ -118,6 +121,6 @@ public class ChessGame
      */
     public ChessBoard getBoard()
     {
-        throw new RuntimeException("Not implemented");
+        return table;
     }
 }

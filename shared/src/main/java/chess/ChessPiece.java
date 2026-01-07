@@ -1,18 +1,22 @@
 package chess;
-
 import java.util.Collection;
+
 
 /**
  * Represents a single chess piece
  * <p>
- * Note: You can add to this class, but you may not alter
+ * Note: You can add to this class, but you may not alte
  * signature of the existing methods.
  */
 public class ChessPiece
 {
+    private ChessGame.TeamColor color;
+    private PieceType pieceType;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type)
     {
+        pieceType = type;
+        color = pieceColor;
     }
 
     /**
@@ -33,15 +37,15 @@ public class ChessPiece
      */
     public ChessGame.TeamColor getTeamColor()
     {
-        throw new RuntimeException("Not implemented");
+        return color;
     }
 
     /**
-     * @return which type of chess piece this piece is
+     * @return which type of chess piece this piece  is
      */
     public PieceType getPieceType()
     {
-        throw new RuntimeException("Not implemented");
+        return pieceType;
     }
 
     /**
