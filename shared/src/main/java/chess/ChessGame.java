@@ -56,7 +56,11 @@ public class ChessGame
     public Collection<ChessMove> validMoves(ChessPosition startPosition)
     {
         ChessPiece curr = table.getPiece(startPosition);
-        return table.getPiece(startPosition).pieceMoves(table, table.getPiece(startPosition));
+        if(curr != null)
+        {
+            return curr.pieceMoves(table, startPosition);
+        }
+        return null;
     }
 
     /**
