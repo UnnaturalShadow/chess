@@ -1,9 +1,6 @@
 package chess.moves;
 
-import chess.ChessBoard;
-import chess.ChessMove;
-import chess.ChessPiece;
-import chess.ChessPosition;
+import chess.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,11 +12,43 @@ public class Calculator
     ChessPiece toMove;
     ArrayList<ChessMove> validMoves = new ArrayList<>();
 
+    int[][] kingMatrix = {
+            {-1,1}, {0,1}, {1,1},
+            {-1,0}, {0,0}, {1,0},
+            {-1,-1}, {0,-1}, {1,-1}
+    };
+
+    int[][] queenMatrix = {
+            {-1,1}, {0,1}, {1,1},
+            {-1,0}, {0,0}, {1,0},
+            {-1,-1}, {0,-1}, {1,-1}
+    };
+
+    int[][] rookMatrix = {
+            {0,1},
+            {-1,0}, {1,0},
+            {0,-1}
+    };
+
     public Calculator(ChessBoard board, ChessPosition position)
     {
         pos = position;
         table = board;
         toMove = table.getPiece(pos);
+
+        switch (toMove)
+        {
+            case ChessPiece.PieceType.KING:
+                moveFromMods(kingMatrix);
+                break;
+            case ChessPiece.PieceType.QUEEN:
+                unboundedMoveFromMods(queenMatrix);
+                break;
+            case ChessPiece.PieceType.ROOK:
+                unboundedMoveFromMods(rookMatrix);
+            default:
+                break;
+        }
     }
 
     public boolean inBounds(int row, int col)
