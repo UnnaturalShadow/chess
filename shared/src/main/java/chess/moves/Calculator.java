@@ -57,6 +57,30 @@ public class Calculator
         }
     }
 
+    public void unboundedMoveFromMods(int[][] mods)
+    {
+        for (int[] dir : mods) {
+            int newRow = pos.getRow() + dir[0];
+            int newCol = pos.getColumn() + dir[1];
+
+            ChessPosition moveTo = new ChessPosition(newRow, newCol);
+            while (inBounds(newRow, newCol)) {
+                if (table.getPiece(moveTo) == null) {
+                    validMoves.add(new ChessMove(pos, moveTo, null));
+                } else {
+                    if (table.getPiece(moveTo).getTeamColor() != toMove.getTeamColor()) {
+                        validMoves.add(new ChessMove(pos, moveTo, null));
+                    }
+                    break;
+                }
+
+                newRow += dir[0];
+                newCol += dir[1];
+            }
+        }
+    }
+
+
     public Collection<ChessMove> getMoves()
     {
         return validMoves;
