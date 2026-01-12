@@ -4,6 +4,7 @@ import chess.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class Calculator
 {
@@ -30,6 +31,12 @@ public class Calculator
             {0,-1}
     };
 
+    int[][] bishopMatrix =
+            {
+                    {-1, 1}, {1, 1},
+                    {-1, -1}, {1, -1}
+            };
+
     public Calculator(ChessBoard board, ChessPosition position)
     {
         pos = position;
@@ -46,8 +53,80 @@ public class Calculator
                 break;
             case ChessPiece.PieceType.ROOK:
                 unboundedMoveFromMods(rookMatrix);
+                break;
+            case ChessPiece.PieceType.BISHOP:
+                unboundedMoveFromMods(bishopMatrix);
+                break;
+            case ChessPiece.PieceType.PAWN:
+                pawnMoves();
+                break;
             default:
                 break;
+        }
+    }
+
+    public void pawnMoves() {
+        ChessGame.TeamColor team = toMove.getTeamColor();
+        int row_mod;
+        int toPromote;
+        int startedAt;
+
+        if (team == ChessGame.TeamColor.BLACK) {
+            row_mod = -1;
+            toPromote = 1;
+            startedAt = 7;
+        } else {
+            row_mod = 1;
+            toPromote = 8;
+            startedAt = 2;
+        }
+        if (pos.getRow() == startedAt) {
+            chess.ChessPosition endPos = new ChessPosition(startedAt + row_mod, pos.getColumn());
+            if (!isBlocked(endPos)) {
+                validMoves.add(new ChessMove(pos, endPos, null));
+                endPos = new ChessPosition(startedAt + (2 * row_mod), pos.getColumn());
+                if (!isBlocked(endPos)) {
+                    validMoves.add(new ChessMove(pos, endPos, null));
+                }
+            }
+        }
+
+        for (int i = -1; i <= 1; i += 2) {
+            chess.ChessPosition attackPos = new ChessPosition(pos.getRow() + row_mod, pos.getColumn() + i);
+            if (isBlocked(attackPos) && inBounds(attackPos.getRow(), attackPos.getColumn())) {
+                if (attackPos.getRow() == toPromote)
+                {
+                    for (ChessPiece.PieceType promo : List.of(
+                            ChessPiece.PieceType.QUEEN,
+                            ChessPiece.PieceType.ROOK,
+                            ChessPiece.PieceType.BISHOP,
+                            ChessPiece.PieceType.KNIGHT)) {
+                        validMoves.add(new ChessMove(pos, attackPos, promo));
+                    }
+                }
+                else
+                {
+                    validMoves.add(new ChessMove(pos, attackPos, null));
+                }
+            }
+        }
+        chess.ChessPosition plusOne = new ChessPosition(pos.getRow()+row_mod, pos.getColumn());
+        if(!isBlocked(plusOne) && inBounds(plusOne.getRow(), plusOne.getColumn()))
+        {
+            if (plusOne.getRow() == toPromote)
+            {
+                for (ChessPiece.PieceType promo : List.of(
+                        ChessPiece.PieceType.QUEEN,
+                        ChessPiece.PieceType.ROOK,
+                        ChessPiece.PieceType.BISHOP,
+                        ChessPiece.PieceType.KNIGHT)) {
+                    validMoves.add(new ChessMove(pos, plusOne, promo));
+                }
+            }
+            else
+            {
+                validMoves.add(new ChessMove(pos, plusOne, null));
+            }
         }
     }
 
@@ -109,6 +188,14 @@ public class Calculator
         }
     }
 
+    public boolean isBlocked(ChessPosition toCheck)
+    {
+        if(table.getPiece(toCheck) != null)
+        {
+            return true;
+        }
+        return false;
+    }
 
     public Collection<ChessMove> getMoves()
     {
