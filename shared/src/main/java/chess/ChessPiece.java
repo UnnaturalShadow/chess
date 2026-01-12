@@ -1,11 +1,12 @@
 package chess;
 import java.util.Collection;
+import chess.moves.Calculator;
 
 
 /**
  * Represents a single chess piece
  * <p>
- * Note: You can add to this class, but you may not alte
+ * Note: You can add to this class, but you may not alter
  * signature of the existing methods.
  */
 public class ChessPiece
@@ -57,6 +58,7 @@ public class ChessPiece
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition)
     {
-        throw new RuntimeException("Not implemented");
+        chess.moves.Calculator moveMaker = new Calculator(board, myPosition);
+        return moveMaker.getMoves();
     }
 }

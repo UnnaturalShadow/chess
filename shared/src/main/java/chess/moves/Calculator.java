@@ -43,7 +43,7 @@ public class Calculator
         table = board;
         toMove = table.getPiece(pos);
 
-        switch (toMove)
+        switch (toMove.getPieceType())
         {
             case ChessPiece.PieceType.KING:
                 moveFromMods(kingMatrix);

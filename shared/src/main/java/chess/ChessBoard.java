@@ -13,7 +13,7 @@ public class ChessBoard
 
     public ChessBoard()
     {
-        
+        board = new ChessPiece[7][7];
     }
 
     /**
