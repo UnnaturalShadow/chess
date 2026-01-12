@@ -5,6 +5,7 @@ import chess.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import chess.ChessBoard;
 
 public class Calculator
 {
@@ -15,13 +16,13 @@ public class Calculator
 
     int[][] kingMatrix = {
             {-1,1}, {0,1}, {1,1},
-            {-1,0}, {0,0}, {1,0},
+            {-1,0}, {1,0},
             {-1,-1}, {0,-1}, {1,-1}
     };
 
     int[][] queenMatrix = {
             {-1,1}, {0,1}, {1,1},
-            {-1,0}, {0,0}, {1,0},
+            {-1,0}, {1,0},
             {-1,-1}, {0,-1}, {1,-1}
     };
 
@@ -93,7 +94,7 @@ public class Calculator
 
         for (int i = -1; i <= 1; i += 2) {
             chess.ChessPosition attackPos = new ChessPosition(pos.getRow() + row_mod, pos.getColumn() + i);
-            if (isBlocked(attackPos) && inBounds(attackPos.getRow(), attackPos.getColumn())) {
+            if (isBlocked(attackPos) && table.inBounds(attackPos)) {
                 if (attackPos.getRow() == toPromote)
                 {
                     for (ChessPiece.PieceType promo : List.of(
@@ -111,7 +112,7 @@ public class Calculator
             }
         }
         chess.ChessPosition plusOne = new ChessPosition(pos.getRow()+row_mod, pos.getColumn());
-        if(!isBlocked(plusOne) && inBounds(plusOne.getRow(), plusOne.getColumn()))
+        if(!isBlocked(plusOne) && table.inBounds(plusOne))
         {
             if (plusOne.getRow() == toPromote)
             {
@@ -130,17 +131,6 @@ public class Calculator
         }
     }
 
-    public boolean inBounds(int row, int col)
-    {
-        if(row <= 8 && row >=1)
-        {
-            if(col <= 8 && col >=1)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public void moveFromMods(int[][] mods)
     {
@@ -152,9 +142,9 @@ public class Calculator
             int newRow = row + m[0];
             int newCol = col + m[1];
 
-            if (inBounds(newRow, newCol))
+            ChessPosition moveTo = new ChessPosition(newRow, newCol);
+            if (table.inBounds(moveTo))
             {
-                ChessPosition moveTo = new ChessPosition(newRow, newCol);
                 ChessPiece targetPiece = table.getPiece(moveTo);
 
                 if (targetPiece == null || targetPiece.getTeamColor() != toMove.getTeamColor())
@@ -167,16 +157,21 @@ public class Calculator
 
     public void unboundedMoveFromMods(int[][] mods)
     {
-        for (int[] dir : mods) {
+        for (int[] dir : mods)
+        {
             int newRow = pos.getRow() + dir[0];
             int newCol = pos.getColumn() + dir[1];
-
             ChessPosition moveTo = new ChessPosition(newRow, newCol);
-            while (inBounds(newRow, newCol)) {
-                if (table.getPiece(moveTo) == null) {
+
+            while (table.inBounds(moveTo))
+            {
+
+                if (!isBlocked(moveTo))
+                {
                     validMoves.add(new ChessMove(pos, moveTo, null));
                 } else {
-                    if (table.getPiece(moveTo).getTeamColor() != toMove.getTeamColor()) {
+                    if (table.getPiece(moveTo).getTeamColor() != toMove.getTeamColor())
+                    {
                         validMoves.add(new ChessMove(pos, moveTo, null));
                     }
                     break;
@@ -184,6 +179,7 @@ public class Calculator
 
                 newRow += dir[0];
                 newCol += dir[1];
+                moveTo = new ChessPosition(newRow, newCol);
             }
         }
     }

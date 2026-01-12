@@ -13,7 +13,7 @@ public class ChessBoard
 
     public ChessBoard()
     {
-        board = new ChessPiece[7][7];
+        board = new ChessPiece[8][8];
     }
 
     /**
@@ -25,6 +25,13 @@ public class ChessBoard
     public void addPiece(ChessPosition position, ChessPiece piece)
     {
         board[position.getRow()-1][position.getColumn()-1] = piece;
+    }
+
+    public boolean inBounds(ChessPosition position)
+    {
+        int row = position.getRow();
+        int col = position.getColumn();
+        return row >= 1 && row <= 8 && col >= 1 && col <= 8;
     }
 
     /**
