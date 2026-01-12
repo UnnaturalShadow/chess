@@ -32,11 +32,17 @@ public class Calculator
             {0,-1}
     };
 
-    int[][] bishopMatrix =
-            {
-                    {-1, 1}, {1, 1},
-                    {-1, -1}, {1, -1}
-            };
+    int[][] bishopMatrix = {
+            {-1, 1}, {1, 1},
+            {-1, -1}, {1, -1}
+    };
+
+    int[][] knightMatrix = {
+            {-1, 2}, {1, 2},
+            {-2, 1}, {2, 1},
+            {-2, -1}, {2, -1},
+            {-1, -2}, {1, -2}
+    };
 
     public Calculator(ChessBoard board, ChessPosition position)
     {
@@ -61,47 +67,80 @@ public class Calculator
             case ChessPiece.PieceType.PAWN:
                 pawnMoves();
                 break;
+            case ChessPiece.PieceType.KNIGHT:
+                moveFromMods(knightMatrix);
+                break;
             default:
                 break;
         }
     }
 
-    public void pawnMoves() {
+    public void pawnMoves()
+    {
         ChessGame.TeamColor team = toMove.getTeamColor();
         int row_mod;
         int toPromote;
         int startedAt;
 
-        if (team == ChessGame.TeamColor.BLACK) {
+        if (team == ChessGame.TeamColor.BLACK)
+        {
             row_mod = -1;
             toPromote = 1;
             startedAt = 7;
-        } else {
+        }
+        else
+        {
             row_mod = 1;
             toPromote = 8;
             startedAt = 2;
         }
-        if (pos.getRow() == startedAt) {
-            chess.ChessPosition endPos = new ChessPosition(startedAt + row_mod, pos.getColumn());
-            if (!isBlocked(endPos)) {
-                validMoves.add(new ChessMove(pos, endPos, null));
-                endPos = new ChessPosition(startedAt + (2 * row_mod), pos.getColumn());
-                if (!isBlocked(endPos)) {
-                    validMoves.add(new ChessMove(pos, endPos, null));
+
+        ChessPosition oneStep = new ChessPosition(pos.getRow() + row_mod, pos.getColumn());
+        if (table.inBounds(oneStep) && table.getPiece(oneStep) == null)
+        {
+            if (oneStep.getRow() == toPromote)
+            {
+                for (ChessPiece.PieceType promo : List.of(
+                        ChessPiece.PieceType.QUEEN,
+                        ChessPiece.PieceType.ROOK,
+                        ChessPiece.PieceType.BISHOP,
+                        ChessPiece.PieceType.KNIGHT))
+                {
+                    validMoves.add(new ChessMove(pos, oneStep, promo));
+                }
+            }
+            else
+            {
+                validMoves.add(new ChessMove(pos, oneStep, null));
+            }
+
+            if (pos.getRow() == startedAt)
+            {
+                ChessPosition twoStep = new ChessPosition(pos.getRow() + 2 * row_mod, pos.getColumn());
+                if (table.inBounds(twoStep) && table.getPiece(twoStep) == null)
+                {
+                    validMoves.add(new ChessMove(pos, twoStep, null));
                 }
             }
         }
 
-        for (int i = -1; i <= 1; i += 2) {
-            chess.ChessPosition attackPos = new ChessPosition(pos.getRow() + row_mod, pos.getColumn() + i);
-            if (isBlocked(attackPos) && table.inBounds(attackPos)) {
+        // Diagonal captures
+        for (int dc = -1; dc <= 1; dc += 2)
+        {
+            ChessPosition attackPos = new ChessPosition(pos.getRow() + row_mod, pos.getColumn() + dc);
+            if (!table.inBounds(attackPos)) continue;
+
+            ChessPiece target = table.getPiece(attackPos);
+            if (target != null && target.getTeamColor() != toMove.getTeamColor())
+            {
                 if (attackPos.getRow() == toPromote)
                 {
                     for (ChessPiece.PieceType promo : List.of(
                             ChessPiece.PieceType.QUEEN,
                             ChessPiece.PieceType.ROOK,
                             ChessPiece.PieceType.BISHOP,
-                            ChessPiece.PieceType.KNIGHT)) {
+                            ChessPiece.PieceType.KNIGHT))
+                    {
                         validMoves.add(new ChessMove(pos, attackPos, promo));
                     }
                 }
@@ -111,25 +150,8 @@ public class Calculator
                 }
             }
         }
-        chess.ChessPosition plusOne = new ChessPosition(pos.getRow()+row_mod, pos.getColumn());
-        if(!isBlocked(plusOne) && table.inBounds(plusOne))
-        {
-            if (plusOne.getRow() == toPromote)
-            {
-                for (ChessPiece.PieceType promo : List.of(
-                        ChessPiece.PieceType.QUEEN,
-                        ChessPiece.PieceType.ROOK,
-                        ChessPiece.PieceType.BISHOP,
-                        ChessPiece.PieceType.KNIGHT)) {
-                    validMoves.add(new ChessMove(pos, plusOne, promo));
-                }
-            }
-            else
-            {
-                validMoves.add(new ChessMove(pos, plusOne, null));
-            }
-        }
     }
+
 
 
     public void moveFromMods(int[][] mods)
