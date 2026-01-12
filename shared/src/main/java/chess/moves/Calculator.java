@@ -78,24 +78,24 @@ public class Calculator
     public void pawnMoves()
     {
         ChessGame.TeamColor team = toMove.getTeamColor();
-        int row_mod;
+        int rowMod;
         int toPromote;
         int startedAt;
 
         if (team == ChessGame.TeamColor.BLACK)
         {
-            row_mod = -1;
+            rowMod = -1;
             toPromote = 1;
             startedAt = 7;
         }
         else
         {
-            row_mod = 1;
+            rowMod = 1;
             toPromote = 8;
             startedAt = 2;
         }
 
-        ChessPosition oneStep = new ChessPosition(pos.getRow() + row_mod, pos.getColumn());
+        ChessPosition oneStep = new ChessPosition(pos.getRow() + rowMod, pos.getColumn());
         if (table.inBounds(oneStep) && table.getPiece(oneStep) == null)
         {
             if (oneStep.getRow() == toPromote)
@@ -116,7 +116,7 @@ public class Calculator
 
             if (pos.getRow() == startedAt)
             {
-                ChessPosition twoStep = new ChessPosition(pos.getRow() + 2 * row_mod, pos.getColumn());
+                ChessPosition twoStep = new ChessPosition(pos.getRow() + 2 * rowMod, pos.getColumn());
                 if (table.inBounds(twoStep) && table.getPiece(twoStep) == null)
                 {
                     validMoves.add(new ChessMove(pos, twoStep, null));
@@ -127,8 +127,11 @@ public class Calculator
         // Diagonal captures
         for (int dc = -1; dc <= 1; dc += 2)
         {
-            ChessPosition attackPos = new ChessPosition(pos.getRow() + row_mod, pos.getColumn() + dc);
-            if (!table.inBounds(attackPos)) continue;
+            ChessPosition attackPos = new ChessPosition(pos.getRow() + rowMod, pos.getColumn() + dc);
+            if (!table.inBounds(attackPos))
+            {
+                continue;
+            }
 
             ChessPiece target = table.getPiece(attackPos);
             if (target != null && target.getTeamColor() != toMove.getTeamColor())
