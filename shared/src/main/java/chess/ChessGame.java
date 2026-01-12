@@ -58,10 +58,21 @@ public class ChessGame
         ChessPiece curr = table.getPiece(startPosition);
         if(curr != null)
         {
-            return curr.pieceMoves(table, startPosition);
+            Collection<ChessMove> technicallyPossible =  curr.pieceMoves(table, startPosition);
+
+            for(ChessMove move : technicallyPossible)
+            {
+                simulate(move);
+            }
         }
         return null;
     }
+
+    public void simulate(ChessMove move)
+    {
+
+    }
+
 
     /**
      * Makes a move in a chess game
@@ -126,5 +137,28 @@ public class ChessGame
     public ChessBoard getBoard()
     {
         return table;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return 31 * table.hashCode() + turn.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        ChessGame that = (ChessGame)o;
+        return this.table.equals(that.getBoard()) && turn == that.getTeamTurn();
     }
 }

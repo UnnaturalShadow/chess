@@ -1,5 +1,7 @@
 package chess;
+import javax.swing.*;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A chessboard that can hold and rearrange chess pieces.
@@ -52,6 +54,78 @@ public class ChessBoard
      */
     public void resetBoard()
     {
-        throw new RuntimeException("Not implemented");
+        ChessPiece.PieceType[] backRowOrder = {
+                ChessPiece.PieceType.ROOK,
+                ChessPiece.PieceType.KNIGHT,
+                ChessPiece.PieceType.BISHOP,
+                ChessPiece.PieceType.QUEEN,
+                ChessPiece.PieceType.KING,
+                ChessPiece.PieceType.BISHOP,
+                ChessPiece.PieceType.KNIGHT,
+                ChessPiece.PieceType.ROOK
+        };
+
+        ChessGame.TeamColor team = ChessGame.TeamColor.WHITE;
+
+        for (int i = 0; i < 2; i++)
+        {
+            int row = (team == ChessGame.TeamColor.WHITE) ? 1 : 8;
+            int pawnRow = (team == ChessGame.TeamColor.WHITE) ? 2 : 7;
+
+            for (int col = 1; col <= 8; col++)
+            {
+                ChessPosition pos = new ChessPosition(pawnRow, col);
+                addPiece(pos, new ChessPiece(team, ChessPiece.PieceType.PAWN));
+            }
+
+            for (int col = 1; col <= 8; col++)
+            {
+                ChessPosition pos = new ChessPosition(row, col);
+                addPiece(pos, new ChessPiece(team, backRowOrder[col - 1]));
+            }
+
+            team = ChessGame.TeamColor.BLACK;
+        }
+    }
+
+    public String toString()
+    {
+        String str = "";
+        for(int i = 0; i < board.length; i++)
+        {
+            for(int j = 0; j < board[i].length; j++)
+            {
+                if(board[i][j] == null)
+                {
+                    str += ".";
+                }
+                else {
+                    str += board[i][j].getLetter();
+                    str += " ";
+                }
+            }
+            str += "\n";
+        }
+        return str;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Arrays.deepHashCode(board);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+        ChessBoard that = (ChessBoard) o;
+        return Objects.deepEquals(board, that.board);
     }
 }

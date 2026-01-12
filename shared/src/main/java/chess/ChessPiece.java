@@ -61,4 +61,61 @@ public class ChessPiece
         chess.moves.Calculator moveMaker = new Calculator(board, myPosition);
         return moveMaker.getMoves();
     }
+
+    @Override
+    public int hashCode()
+    {
+        return 31 * pieceType.hashCode() + color.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+        ChessPiece that = (ChessPiece) o;
+        return color == that.color && pieceType == that.pieceType;
+    }
+
+    public String getLetter()
+    {
+        if(pieceType == ChessPiece.PieceType.KING)
+        {
+            return "K";
+        }
+        else if(pieceType == ChessPiece.PieceType.QUEEN)
+        {
+            return "Q";
+        }
+        else if(pieceType == ChessPiece.PieceType.BISHOP)
+        {
+            return "B";
+        } else if (pieceType == ChessPiece.PieceType.KNIGHT)
+        {
+            return "N";
+        }
+        else if(pieceType == ChessPiece.PieceType.ROOK)
+        {
+            return "R";
+        }
+        else if(pieceType == ChessPiece.PieceType.PAWN)
+        {
+            return "P";
+        }
+        return "";
+    }
+
+    public String toString()
+    {
+        String str = "";
+        str += "Color: " + this.color + "\n";
+        str += "Type: " + this.pieceType + "\n";
+        return str;
+    }
 }
