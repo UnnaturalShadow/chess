@@ -29,6 +29,7 @@ public class ChessBoard
         board[position.getRow()-1][position.getColumn()-1] = piece;
     }
 
+
     public boolean inBounds(ChessPosition position)
     {
         int row = position.getRow();

@@ -82,8 +82,32 @@ public class ChessGame
         return null;
     }
 
-    public void simulate(ChessMove move)
+    public void setBoard(ChessBoard template, ChessBoard result)
     {
+        for (int i = 1; i <= 8; i++)
+        {
+            for (int j = 1; j <= 8; j++)
+            {
+                result.addPiece(new ChessPosition(i, j), template.getPiece(new ChessPosition(i, j)));
+            }
+        }
+    }
+
+    public ChessBoard simulate(ChessMove move)
+    {
+        ChessBoard current = new ChessBoard();
+        setBoard(table, current);
+
+        try
+        {
+            makeMove(move);
+        }
+        catch (InvalidMoveException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return current;
 
     }
 
@@ -96,8 +120,9 @@ public class ChessGame
      */
     public void makeMove(ChessMove move) throws InvalidMoveException
     {
-        if(move.getEndPosition().getColumn() <=8 && move.getEndPosition().getRow() <= 8)
-        {
+        if(!table.inBounds(move.getEndPosition())) {
+            throw new InvalidMoveException("Piece would move out of bounds");
+        }
             chess.ChessPiece moving = table.getPiece(move.getStartPosition());
             if(moving == null)
             {
@@ -106,10 +131,6 @@ public class ChessGame
             table.addPiece(move.getStartPosition(), null);
             table.addPiece(move.getEndPosition(), moving);
             nextTurn();
-            return;
-        }
-        throw new InvalidMoveException("Piece would move out of bounds");
-
     }
 
     public ChessPosition getKingPosition(TeamColor teamColor)
@@ -168,8 +189,25 @@ public class ChessGame
      */
     public boolean isInCheckmate(TeamColor teamColor)
     {
-        throw new RuntimeException("Not implemented");
+//        throw new RuntimeException("Not implemented");
+        ChessPosition kingPos = getKingPosition(teamColor);
+        if(isInCheck(teamColor))
+        {
+            ChessPiece king = table.getPiece(kingPos);
+            Collection<ChessMove> moves = king.pieceMoves(table, kingPos);
+            for(ChessMove move : moves)
+            {
+                ChessBoard prior = simulate(move);
+                if(!isInCheck(teamColor))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
+
 
     /**
      * Determines if the given team is in stalemate, which here is defined as having
