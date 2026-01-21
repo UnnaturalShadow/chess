@@ -218,7 +218,22 @@ public class ChessGame
      */
     public boolean isInStalemate(TeamColor teamColor)
     {
-        throw new RuntimeException("Not implemented");
+        ChessPosition kingPos = getKingPosition(teamColor);
+        if(!isInCheck(teamColor))
+        {
+            ChessPiece king = table.getPiece(kingPos);
+            Collection<ChessMove> moves = king.pieceMoves(table, kingPos);
+            for(ChessMove move : moves)
+            {
+                ChessBoard prior = simulate(move);
+                if(!isInCheck(teamColor))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
