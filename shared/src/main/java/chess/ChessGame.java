@@ -69,17 +69,24 @@ public class ChessGame
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition)
     {
-        ChessPiece curr = table.getPiece(startPosition);
-        if(curr != null)
+        ChessPiece piece = table.getPiece(startPosition);
+        if (piece == null)
         {
-            Collection<ChessMove> technicallyPossible =  curr.pieceMoves(table, startPosition);
+            return null;
+        }
 
-            for(ChessMove move : technicallyPossible)
+        Collection<ChessMove> moves = piece.pieceMoves(table, startPosition);
+        Collection<ChessMove> legalMoves = new ArrayList<>();
+
+        for (ChessMove move : moves)
+        {
+            if (simulate(move))
             {
-                simulate(move);
+                legalMoves.add(move);
             }
         }
-        return null;
+
+        return legalMoves;
     }
 
     public void setBoard(ChessBoard template, ChessBoard result)
@@ -150,6 +157,25 @@ public class ChessGame
         return null;
     }
 
+    private boolean isThreat(int row, int col, TeamColor teamColor, ChessPosition kingPosition)
+    {
+        ChessPiece currentPiece = table.getPiece(new ChessPosition(row, col));
+        if (currentPiece == null || currentPiece.getTeamColor() == teamColor)
+        {
+            return false;
+        }
+
+        for (ChessMove move : currentPiece.pieceMoves(table, new ChessPosition(row, col)))
+        {
+            if (move.getEndPosition().equals(kingPosition))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Determines if the given team is in check
      *
@@ -158,23 +184,15 @@ public class ChessGame
      */
     public boolean isInCheck(TeamColor teamColor)
     {
-//        throw new RuntimeException("Not implemented");
         ChessPosition kingPos = getKingPosition(teamColor);
         for(int i = 1; i <= 8; i++)
         {
             for(int j = 1; j <= 8; j++)
             {
                 ChessPiece attacking = table.getPiece(new ChessPosition(i, j));
-                if(attacking != null && attacking.getTeamColor() != teamColor)
+                if(isThreat(i, j, teamColor, kingPos))
                 {
-                    Collection<ChessMove> moves = attacking.pieceMoves(table, new ChessPosition(i, j));
-                    for(ChessMove move : moves)
-                    {
-                        if(move.getEndPosition() == kingPos)
-                        {
-                            return true;
-                        }
-                    }
+                    return true;
                 }
             }
         }
@@ -189,7 +207,6 @@ public class ChessGame
      */
     public boolean isInCheckmate(TeamColor teamColor)
     {
-//        throw new RuntimeException("Not implemented");
         ChessPosition kingPos = getKingPosition(teamColor);
         if(isInCheck(teamColor))
         {
