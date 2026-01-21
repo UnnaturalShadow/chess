@@ -202,6 +202,7 @@ public class ChessGame
                 {
                     return false;
                 }
+                setBoard(prior, table);
             }
             return true;
         }
@@ -230,6 +231,7 @@ public class ChessGame
                 {
                     return false;
                 }
+                setBoard(prior, table);
             }
             return true;
         }
