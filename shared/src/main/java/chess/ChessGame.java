@@ -18,6 +18,7 @@ public class ChessGame
     {
         turn = TeamColor.WHITE;
         table = new ChessBoard();
+        table.resetBoard();
     }
 
     /**
@@ -92,12 +93,14 @@ public class ChessGame
     public boolean isLegal(ChessMove move)
     {
         ChessPiece moving = table.getPiece(move.getStartPosition());
+        ChessPiece captured = table.getPiece(move.getEndPosition());
         table.addPiece(move.getStartPosition(), null);
         table.addPiece(move.getEndPosition(), moving);
         boolean legal = !isInCheck(moving.getTeamColor());
         table.addPiece(move.getStartPosition(), moving);
-        table.addPiece(move.getEndPosition(), null);
+        table.addPiece(move.getEndPosition(), captured);
         return legal;
+
     }
 
 
@@ -164,7 +167,14 @@ public class ChessGame
 
         for (ChessMove move : currentPiece.pieceMoves(table, new ChessPosition(row, col)))
         {
-            if (move.getEndPosition().equals(kingPosition))
+            if(currentPiece.getPieceType() == ChessPiece.PieceType.PAWN)
+            {
+                if(move.getEndPosition().getColumn() != col && move.getEndPosition().equals(kingPosition))
+                {
+                    return true;
+                }
+            }
+            else if(move.getEndPosition().equals(kingPosition))
             {
                 return true;
             }
@@ -203,11 +213,31 @@ public class ChessGame
      */
     public boolean isInCheckmate(TeamColor teamColor)
     {
-        ChessPosition kingPos = getKingPosition(teamColor);
         if(isInCheck(teamColor))
         {
-            Collection<ChessMove> kingMoves = validMoves(kingPos);
-            return kingMoves.isEmpty();
+            //need to check if there are ANY valid moves, not just valid king moves
+            for(int i = 1; i <= 8; i++)
+            {
+                for(int j = 1; j <= 8; j++)
+                {
+                    ChessPosition curPos = new ChessPosition(i, j);
+                    ChessPiece piece = table.getPiece(curPos);
+                    if(piece != null && piece.getTeamColor() == teamColor)
+                    {
+                        Collection<ChessMove> canMove = validMoves(curPos);
+                        if(!canMove.isEmpty())
+                        {
+                            for(ChessMove move : canMove)
+                            {
+                                System.out.println(move.toString());
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
         }
         return false;
     }
@@ -222,11 +252,26 @@ public class ChessGame
      */
     public boolean isInStalemate(TeamColor teamColor)
     {
-        ChessPosition kingPos = getKingPosition(teamColor);
         if(!isInCheck(teamColor))
         {
-            Collection<ChessMove> kingMoves = validMoves(kingPos);
-            return kingMoves.isEmpty();
+            //need to check if there are ANY valid moves, not just valid king moves
+            for(int i = 1; i <= 8; i++)
+            {
+                for(int j = 1; j <= 8; j++)
+                {
+                    ChessPosition curPos = new ChessPosition(i, j);
+                    ChessPiece piece = table.getPiece(curPos);
+                    if(piece != null && piece.getTeamColor() == teamColor)
+                    {
+                        Collection<ChessMove> canMove = validMoves(curPos);
+                        if(!canMove.isEmpty())
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
         }
         return false;
     }
