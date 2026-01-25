@@ -205,19 +205,8 @@ public class ChessGame
         return false;
     }
 
-    /**
-     * Determines if the given team is in checkmate
-     *
-     * @param teamColor which team to check for checkmate
-     * @return True if the specified team is in checkmate
-     */
-    public boolean isInCheckmate(TeamColor teamColor)
+    public boolean foobar(ChessGame.TeamColor teamColor)
     {
-        if(!isInCheck(teamColor))
-        {
-            return false;
-        }
-        //need to check if there are ANY valid moves, not just valid king moves
         for(int i = 1; i <= 8; i++)
         {
             for(int j = 1; j <= 8; j++)
@@ -235,6 +224,23 @@ public class ChessGame
             }
         }
         return true;
+    }
+
+    /**
+     * Determines if the given team is in checkmate
+     *
+     * @param teamColor which team to check for checkmate
+     * @return True if the specified team is in checkmate
+     */
+    public boolean isInCheckmate(TeamColor teamColor)
+    {
+        if(!isInCheck(teamColor))
+        {
+            return false;
+        }
+        //need to check if there are ANY valid moves, not just valid king moves
+
+        return foobar(teamColor);
 
     }
 
@@ -253,23 +259,7 @@ public class ChessGame
             return false;
         }
         //need to check if there are ANY valid moves, not just valid king moves
-        for(int i = 1; i <= 8; i++)
-        {
-            for(int j = 1; j <= 8; j++)
-            {
-                ChessPosition curPos = new ChessPosition(i, j);
-                ChessPiece piece = table.getPiece(curPos);
-                if(piece != null && piece.getTeamColor() == teamColor)
-                {
-                    Collection<ChessMove> canMove = validMoves(curPos);
-                    if(!canMove.isEmpty())
-                    {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
+        return foobar(teamColor);
     }
 
     /**
