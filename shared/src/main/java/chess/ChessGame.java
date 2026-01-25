@@ -80,7 +80,7 @@ public class ChessGame
 
         for (ChessMove move : moves)
         {
-            if (simulate(move))
+            if (isLegal(move))
             {
                 legalMoves.add(move);
             }
@@ -89,33 +89,15 @@ public class ChessGame
         return legalMoves;
     }
 
-    public void setBoard(ChessBoard template, ChessBoard result)
+    public boolean isLegal(ChessMove move)
     {
-        for (int i = 1; i <= 8; i++)
-        {
-            for (int j = 1; j <= 8; j++)
-            {
-                result.addPiece(new ChessPosition(i, j), template.getPiece(new ChessPosition(i, j)));
-            }
-        }
-    }
-
-    public ChessBoard simulate(ChessMove move)
-    {
-        ChessBoard current = new ChessBoard();
-        setBoard(table, current);
-
-        try
-        {
-            makeMove(move);
-        }
-        catch (InvalidMoveException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        return current;
-
+        ChessPiece moving = table.getPiece(move.getStartPosition());
+        table.addPiece(move.getStartPosition(), null);
+        table.addPiece(move.getEndPosition(), moving);
+        boolean legal = !isInCheck(moving.getTeamColor());
+        table.addPiece(move.getStartPosition(), moving);
+        table.addPiece(move.getEndPosition(), null);
+        return legal;
     }
 
 
@@ -127,17 +109,32 @@ public class ChessGame
      */
     public void makeMove(ChessMove move) throws InvalidMoveException
     {
-        if(!table.inBounds(move.getEndPosition())) {
-            throw new InvalidMoveException("Piece would move out of bounds");
+        if(table.getPiece(move.getStartPosition()) == null)
+        {
+            throw new InvalidMoveException("No piece to move at that position.");
         }
-            chess.ChessPiece moving = table.getPiece(move.getStartPosition());
-            if(moving == null)
-            {
-                throw new InvalidMoveException("No piece at start position");
-            }
+        if(table.getPiece(move.getStartPosition()).getTeamColor() != turn)
+        {
+            throw new InvalidMoveException("It's not your turn silly!");
+        }
+        Collection<ChessMove> goodMoves = validMoves(move.getStartPosition());
+        if(goodMoves.contains(move))
+        {
+            ChessPiece moving = table.getPiece(move.getStartPosition());
             table.addPiece(move.getStartPosition(), null);
-            table.addPiece(move.getEndPosition(), moving);
+            if(move.getPromotionPiece() != null)
+            {
+                table.addPiece(move.getEndPosition(), new ChessPiece(turn, move.getPromotionPiece()));
+            }
+            else
+            {
+                table.addPiece(move.getEndPosition(), moving);
+            }
             nextTurn();
+            return;
+        }
+        throw new InvalidMoveException("That is not a legal move");
+
     }
 
     public ChessPosition getKingPosition(TeamColor teamColor)
@@ -189,7 +186,6 @@ public class ChessGame
         {
             for(int j = 1; j <= 8; j++)
             {
-                ChessPiece attacking = table.getPiece(new ChessPosition(i, j));
                 if(isThreat(i, j, teamColor, kingPos))
                 {
                     return true;
@@ -210,18 +206,8 @@ public class ChessGame
         ChessPosition kingPos = getKingPosition(teamColor);
         if(isInCheck(teamColor))
         {
-            ChessPiece king = table.getPiece(kingPos);
-            Collection<ChessMove> moves = king.pieceMoves(table, kingPos);
-            for(ChessMove move : moves)
-            {
-                ChessBoard prior = simulate(move);
-                if(!isInCheck(teamColor))
-                {
-                    return false;
-                }
-                setBoard(prior, table);
-            }
-            return true;
+            Collection<ChessMove> kingMoves = validMoves(kingPos);
+            return kingMoves.isEmpty();
         }
         return false;
     }
@@ -239,18 +225,8 @@ public class ChessGame
         ChessPosition kingPos = getKingPosition(teamColor);
         if(!isInCheck(teamColor))
         {
-            ChessPiece king = table.getPiece(kingPos);
-            Collection<ChessMove> moves = king.pieceMoves(table, kingPos);
-            for(ChessMove move : moves)
-            {
-                ChessBoard prior = simulate(move);
-                if(!isInCheck(teamColor))
-                {
-                    return false;
-                }
-                setBoard(prior, table);
-            }
-            return true;
+            Collection<ChessMove> kingMoves = validMoves(kingPos);
+            return kingMoves.isEmpty();
         }
         return false;
     }
