@@ -8,10 +8,7 @@ import model.GameData;
 import requests.CreateRequest;
 import requests.JoinRequest;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class MemoryGameDAO implements GameDAO
 {
@@ -79,6 +76,6 @@ public class MemoryGameDAO implements GameDAO
     @Override
     public List<GameData> listGames()
     {
-        return List.of();
+        return new ArrayList<>(gameList.values());
     }
 }
