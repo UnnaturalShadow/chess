@@ -1,7 +1,6 @@
 package dataaccess.memory;
 
 import dataaccess.exceptions.AlreadyTakenException;
-import dataaccess.exceptions.DataAccessException;
 import dataaccess.GameDAO;
 import model.GameData;
 import model.PlayerColor;
@@ -15,7 +14,7 @@ public class MemoryGameDAO implements GameDAO
     private final Map<Integer, GameData> games = new HashMap<>();
 
     @Override
-    public GameData save(GameData game) throws DataAccessException
+    public GameData save(GameData game)
     {
         int id = game.gameID() <= 0 ? nextId++ : game.gameID();
         GameData newGame = new GameData(id, game.whiteUsername(),
