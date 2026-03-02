@@ -1,5 +1,6 @@
 package service;
 
+import dataaccess.AlreadyTakenException;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.UserDAO;
@@ -24,14 +25,25 @@ public class UserService
         user.clear();
     }
 
-    public AuthResult register(String username, String password, String email) throws DataAccessException
+    void checkRequest(Object... requestFields) throws DataAccessException
+    {
+        for (Object requestField : requestFields)
+        {
+            if (requestField == null)
+            {
+                throw new DataAccessException("Missing one or more fields in request");
+            }
+        }
+    }
+
+    public AuthResult register(String username, String password, String email) throws AlreadyTakenException, DataAccessException
     {
         checkRequest(username, password);
         UserData userData = new UserData(username, password, email);
 
         if (user.getUser(username) != null)
         {
-            throw new DataAccessException("Already exists user with username " + username);
+            throw new AlreadyTakenException("Already exists user with username " + username);
         }
 
         user.createUser(userData);
