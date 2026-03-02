@@ -18,8 +18,8 @@ public class MemoryGameDAO implements GameDAO
     public GameData save(GameData game) throws DataAccessException
     {
         int id = game.gameID() <= 0 ? nextId++ : game.gameID();
-        GameData newGame = new GameData(id, game.gameName(),
-                game.whiteUsername(), game.blackUsername(), game.game());
+        GameData newGame = new GameData(id, game.whiteUsername(),
+                game.blackUsername(), game.gameName(), game.game());
         games.put(id, newGame);
         return newGame;
     }
@@ -38,31 +38,48 @@ public class MemoryGameDAO implements GameDAO
 
     @Override
     public void assignPlayer(int gameId, String username, PlayerColor color)
-            throws AlreadyTakenException, DataAccessException
-    {
+            throws AlreadyTakenException {
 
         GameData game = findById(gameId)
-                .orElseThrow(() -> new DataAccessException("Invalid game ID"));
+                .orElseThrow(() -> new IllegalStateException("Game not found in DAO"));
+
+        // Observer case
+        if (color == null) {
+            return; // joining as observer, no change to white/black
+        }
 
         GameData updated;
-        switch (color)
-        {
-            case WHITE ->
-            {
+
+        switch (color) {
+            case WHITE -> {
                 if (game.whiteUsername() != null)
-                    throw new AlreadyTakenException("White already taken");
-                updated = new GameData(game.gameID(), game.gameName(),
-                        username, game.blackUsername(), game.game());
+                    throw new AlreadyTakenException("Error: White already taken");
+
+                updated = new GameData(
+                        game.gameID(),
+                        username,
+                        game.blackUsername(),
+                        game.gameName(),
+                        game.game()
+                );
             }
-            case BLACK ->
-            {
+
+            case BLACK -> {
                 if (game.blackUsername() != null)
-                    throw new AlreadyTakenException("Black already taken");
-                updated = new GameData(game.gameID(), game.gameName(),
-                        game.whiteUsername(), username, game.game());
+                    throw new AlreadyTakenException("Error: Black already taken");
+
+                updated = new GameData(
+                        game.gameID(),
+                        game.whiteUsername(),
+                        username,
+                        game.gameName(),
+                        game.game()
+                );
             }
-            default -> throw new IllegalStateException("Unexpected color: " + color);
+
+            default -> throw new IllegalStateException("Unexpected playerColor: " + color);
         }
+
         games.put(gameId, updated);
     }
 
