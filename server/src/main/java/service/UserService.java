@@ -8,6 +8,7 @@ import model.UserData;
 import requests.AuthResult;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class UserService
 {
@@ -21,93 +22,68 @@ public class UserService
         this.authService = new AuthService(authDAO);
     }
 
+    // --- Public API ---
 
     public void clear()
     {
         userDAO.clear();
     }
 
-
-    public AuthResult register(String username,
-                               String password,
-                               String email)
+    public AuthResult register(String username, String password, String email)
             throws DataAccessException, AlreadyTakenException
     {
 
-        validateCredentials(username, password);
+        validateInput(username, password);
 
         ensureUserDoesNotExist(username);
 
-        UserData newUser = buildUser(username, password, email);
-        persistUser(newUser);
+        UserData newUser = new UserData(username, password, email);
+        userDAO.save(newUser);
 
-        return issueAuth(username);
+        return issueToken(username);
     }
 
-    public AuthResult login(String username,
-                            String password)
+    public AuthResult login(String username, String password)
             throws DataAccessException
     {
 
-        validateCredentials(username, password);
+        validateInput(username, password);
 
         authenticateUser(username, password);
 
-        return issueAuth(username);
+        return issueToken(username);
     }
 
-    private void validateCredentials(String username,
-                                     String password)
-            throws DataAccessException
-    {
+    // --- Private Helpers ---
 
+    private void validateInput(String username, String password) throws DataAccessException
+    {
         if (isBlank(username) || isBlank(password))
         {
-            throw new DataAccessException("Username and password required");
+            throw new DataAccessException("Username and password are required");
         }
     }
 
-    private void ensureUserDoesNotExist(String username)
-            throws DataAccessException, AlreadyTakenException
+    private void ensureUserDoesNotExist(String username) throws AlreadyTakenException
     {
-
-        if (userDAO.getUser(username) != null)
+        Optional<UserData> existing = userDAO.findByUsername(username);
+        if (existing.isPresent())
         {
-            throw new AlreadyTakenException(
-                    "Username already in use"
-            );
+            throw new AlreadyTakenException("Username already in use");
         }
     }
 
-    private void authenticateUser(String username,
-                                  String password)
-            throws DataAccessException
+    private void authenticateUser(String username, String password) throws DataAccessException
     {
-
-        boolean valid = userDAO.validate(username, password);
+        boolean valid = userDAO.validateCredentials(username, password);
         if (!valid)
         {
             throw new DataAccessException("Unauthorized");
         }
     }
 
-    private UserData buildUser(String username,
-                               String password,
-                               String email)
+    private AuthResult issueToken(String username) throws DataAccessException
     {
-        return new UserData(username, password, email);
-    }
-
-    private void persistUser(UserData user)
-            throws DataAccessException
-    {
-        userDAO.createUser(user);
-    }
-
-    private AuthResult issueAuth(String username)
-            throws DataAccessException
-    {
-
         String token = authService.generateToken(username);
         return new AuthResult(username, token);
     }

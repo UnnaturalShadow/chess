@@ -16,6 +16,7 @@ public class AuthService
         this.authDAO = Objects.requireNonNull(authDAO);
     }
 
+    // --- Public API ---
 
     public String generateToken(String username) throws DataAccessException
     {
@@ -33,41 +34,32 @@ public class AuthService
         revokeToken(token);
     }
 
+    // --- Private Helpers ---
 
     private String createToken()
     {
         return UUID.randomUUID().toString();
     }
 
-    private void storeToken(String username, String token)
-            throws DataAccessException
+    private void storeToken(String username, String token) throws DataAccessException
     {
         authDAO.addToken(username, token);
     }
 
-    private void revokeToken(String token)
-            throws DataAccessException
+    private void revokeToken(String token) throws DataAccessException
     {
-        authDAO.remove(token);
+        authDAO.removeToken(token);
     }
 
-    private String requireAuthenticated(String token)
-            throws DataAccessException
+    private String requireAuthenticated(String token) throws DataAccessException
     {
-
         requireNonBlank(token, "Token required");
 
-        String username = authDAO.authenticate(token);
-        if (username == null)
-        {
-            throw new DataAccessException("Invalid or expired token");
-        }
-
-        return username;
+        return authDAO.findUsernameByToken(token)
+                .orElseThrow(() -> new DataAccessException("Invalid or expired token"));
     }
 
-    private void requireNonBlank(String value, String message)
-            throws DataAccessException
+    private void requireNonBlank(String value, String message) throws DataAccessException
     {
         if (value == null || value.isBlank())
         {
