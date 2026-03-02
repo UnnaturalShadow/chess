@@ -3,35 +3,75 @@ package service;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class AuthService
 {
-    private AuthDAO authDAO;
+
+    private final AuthDAO authDAO;
+
     public AuthService(AuthDAO authDAO)
     {
-        this.authDAO = authDAO;
+        this.authDAO = Objects.requireNonNull(authDAO);
     }
 
-    public String genToken(String username) throws DataAccessException
-    {
-        if (username == null)
-        {
-            throw new DataAccessException("No username supplied");
-        }
-        String newToken = UUID.randomUUID().toString();
 
-        authDAO.addToken(username, newToken);
-        return newToken;
+    public String generateToken(String username) throws DataAccessException
+    {
+        requireNonBlank(username, "Username is required");
+
+        String token = createToken();
+        storeToken(username, token);
+
+        return token;
     }
 
     public void logout(String token) throws DataAccessException
     {
-        if (token == null || authDAO.authenticate(token) == null)
-        {
-            throw new DataAccessException("Not validated");
-        }
+        String user = requireAuthenticated(token);
+        revokeToken(token);
+    }
+
+
+    private String createToken()
+    {
+        return UUID.randomUUID().toString();
+    }
+
+    private void storeToken(String username, String token)
+            throws DataAccessException
+    {
+        authDAO.addToken(username, token);
+    }
+
+    private void revokeToken(String token)
+            throws DataAccessException
+    {
         authDAO.remove(token);
     }
 
+    private String requireAuthenticated(String token)
+            throws DataAccessException
+    {
+
+        requireNonBlank(token, "Token required");
+
+        String username = authDAO.authenticate(token);
+        if (username == null)
+        {
+            throw new DataAccessException("Invalid or expired token");
+        }
+
+        return username;
+    }
+
+    private void requireNonBlank(String value, String message)
+            throws DataAccessException
+    {
+        if (value == null || value.isBlank())
+        {
+            throw new DataAccessException(message);
+        }
+    }
 }

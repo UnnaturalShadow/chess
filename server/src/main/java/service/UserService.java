@@ -7,63 +7,113 @@ import dataaccess.UserDAO;
 import model.UserData;
 import requests.AuthResult;
 
+import java.util.Objects;
+
 public class UserService
 {
 
-    public UserDAO user;
-    public AuthService auth;
+    private final UserDAO userDAO;
+    private final AuthService authService;
 
-    public UserService(UserDAO user, AuthDAO authDAO)
+    public UserService(UserDAO userDAO, AuthDAO authDAO)
     {
-        this.user = user;
-        this.auth = new AuthService(authDAO);
-
+        this.userDAO = Objects.requireNonNull(userDAO);
+        this.authService = new AuthService(authDAO);
     }
+
 
     public void clear()
     {
-        user.clear();
+        userDAO.clear();
     }
 
-    void checkRequest(Object... requestFields) throws DataAccessException
+
+    public AuthResult register(String username,
+                               String password,
+                               String email)
+            throws DataAccessException, AlreadyTakenException
     {
-        for (Object requestField : requestFields)
+
+        validateCredentials(username, password);
+
+        ensureUserDoesNotExist(username);
+
+        UserData newUser = buildUser(username, password, email);
+        persistUser(newUser);
+
+        return issueAuth(username);
+    }
+
+    public AuthResult login(String username,
+                            String password)
+            throws DataAccessException
+    {
+
+        validateCredentials(username, password);
+
+        authenticateUser(username, password);
+
+        return issueAuth(username);
+    }
+
+    private void validateCredentials(String username,
+                                     String password)
+            throws DataAccessException
+    {
+
+        if (isBlank(username) || isBlank(password))
         {
-            if (requestField == null)
-            {
-                throw new DataAccessException("Missing one or more fields in request");
-            }
+            throw new DataAccessException("Username and password required");
         }
     }
 
-    public AuthResult register(String username, String password, String email) throws AlreadyTakenException, DataAccessException
+    private void ensureUserDoesNotExist(String username)
+            throws DataAccessException, AlreadyTakenException
     {
-        checkRequest(username, password);
-        UserData userData = new UserData(username, password, email);
 
-        if (user.getUser(username) != null)
+        if (userDAO.getUser(username) != null)
         {
-            throw new AlreadyTakenException("Already exists user with username " + username);
+            throw new AlreadyTakenException(
+                    "Username already in use"
+            );
         }
-
-        user.createUser(userData);
-        String tok = auth.genToken(username);
-        return new AuthResult(username, tok);
-
     }
 
-    public AuthResult login(String username, String password) throws DataAccessException
+    private void authenticateUser(String username,
+                                  String password)
+            throws DataAccessException
     {
-        checkRequest(username, password);
 
-        if (!user.validate(username, password))
+        boolean valid = userDAO.validate(username, password);
+        if (!valid)
         {
-            throw new DataAccessException("Error: Unauthorized");
+            throw new DataAccessException("Unauthorized");
         }
-
-        String tok = auth.genToken(username);
-        return new AuthResult(username, tok);
-
     }
 
+    private UserData buildUser(String username,
+                               String password,
+                               String email)
+    {
+        return new UserData(username, password, email);
+    }
+
+    private void persistUser(UserData user)
+            throws DataAccessException
+    {
+        userDAO.createUser(user);
+    }
+
+    private AuthResult issueAuth(String username)
+            throws DataAccessException
+    {
+
+        String token = authService.generateToken(username);
+        return new AuthResult(username, token);
+    }
+
+    private boolean isBlank(String value)
+    {
+        return value == null || value.isBlank();
+    }
 }

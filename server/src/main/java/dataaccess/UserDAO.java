@@ -2,10 +2,11 @@ package dataaccess;
 
 import model.UserData;
 
-public interface UserDAO
-{
-    void createUser(UserData userData) throws DataAccessException;
+import java.util.Optional;
+
+public interface UserDAO {
+    void save(UserData user) throws DataAccessException;
+    Optional<UserData> findByUsername(String username);
+    boolean validateCredentials(String username, String password);
     void clear();
-    UserData getUser(String username) throws DataAccessException;
-    boolean validate(String username, String password);
 }

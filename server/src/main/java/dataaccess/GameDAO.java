@@ -1,16 +1,17 @@
 package dataaccess;
 
 import model.GameData;
-import requests.CreateRequest;
-import requests.JoinRequest;
+import model.PlayerColor;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GameDAO
 {
-    int createGame(CreateRequest request) throws DataAccessException;
-    GameData getGame(int gameID) throws DataAccessException;
-    List<GameData> listGames();
-    void joinGame(JoinRequest request, String username) throws AlreadyTakenException;
+    GameData save(GameData game) throws DataAccessException;
+    Optional<GameData> findById(int gameId);
+    List<GameData> findAll();
+    void assignPlayer(int gameId, String username, PlayerColor color)
+            throws AlreadyTakenException, DataAccessException;
     void clear();
 }

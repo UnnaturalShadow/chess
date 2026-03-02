@@ -7,32 +7,36 @@ import model.UserData;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class MemoryUserDAO implements UserDAO
 {
-    public Map<String, UserData> userList = new HashMap<>();
+
+    private final Map<String, UserData> users = new HashMap<>();
 
     @Override
-    public void createUser(UserData userData)
+    public void save(UserData user)
     {
-        userList.put(userData.username(), userData);
+        users.put(user.username(), user);
     }
 
     @Override
-    public UserData getUser(String username) throws DataAccessException
+    public Optional<UserData> findByUsername(String username)
     {
-        return userList.get(username);
+        return Optional.ofNullable(users.get(username));
     }
 
     @Override
-    public boolean validate(String username, String password)
+    public boolean validateCredentials(String username, String password)
     {
-        return userList.containsKey(username) && Objects.equals(userList.get(username).password(), password);
+        return findByUsername(username)
+                .map(u -> Objects.equals(u.password(), password))
+                .orElse(false);
     }
 
     @Override
     public void clear()
     {
-        userList = new HashMap<>();
+        users.clear();
     }
 }

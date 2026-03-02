@@ -1,81 +1,74 @@
 package dataaccess.memory;
 
-import chess.ChessGame;
 import dataaccess.AlreadyTakenException;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
 import model.GameData;
-import requests.CreateRequest;
-import requests.JoinRequest;
+import model.PlayerColor;
 
 import java.util.*;
 
 public class MemoryGameDAO implements GameDAO
 {
-    private int currID = 1;
-    public Map<Integer, GameData> gameList = new HashMap<>();
+
+    private int nextId = 1;
+    private final Map<Integer, GameData> games = new HashMap<>();
 
     @Override
-    public int createGame(CreateRequest request) throws DataAccessException
+    public GameData save(GameData game) throws DataAccessException
     {
-        try
-        {
-            GameData game = new GameData(currID, request.gameName(), null, null, new ChessGame());
-            gameList.put(currID, game);
-            currID++;
-            return currID-1;
-        }
-        catch (Exception e)
-        {
-            throw new DataAccessException("Could not create game", e);
-        }
+        int id = game.gameID() <= 0 ? nextId++ : game.gameID();
+        GameData newGame = new GameData(id, game.gameName(),
+                game.whiteUsername(), game.blackUsername(), game.game());
+        games.put(id, newGame);
+        return newGame;
     }
 
     @Override
-    public GameData getGame(int gameID)
+    public Optional<GameData> findById(int gameId)
     {
-        return gameList.get(gameID);
+        return Optional.ofNullable(games.get(gameId));
+    }
+
+    @Override
+    public List<GameData> findAll()
+    {
+        return new ArrayList<>(games.values());
+    }
+
+    @Override
+    public void assignPlayer(int gameId, String username, PlayerColor color)
+            throws AlreadyTakenException, DataAccessException
+    {
+
+        GameData game = findById(gameId)
+                .orElseThrow(() -> new DataAccessException("Invalid game ID"));
+
+        GameData updated;
+        switch (color)
+        {
+            case WHITE ->
+            {
+                if (game.whiteUsername() != null)
+                    throw new AlreadyTakenException("White already taken");
+                updated = new GameData(game.gameID(), game.gameName(),
+                        username, game.blackUsername(), game.game());
+            }
+            case BLACK ->
+            {
+                if (game.blackUsername() != null)
+                    throw new AlreadyTakenException("Black already taken");
+                updated = new GameData(game.gameID(), game.gameName(),
+                        game.whiteUsername(), username, game.game());
+            }
+            default -> throw new IllegalStateException("Unexpected color: " + color);
+        }
+        games.put(gameId, updated);
     }
 
     @Override
     public void clear()
     {
-        gameList = new HashMap<>();
-    }
-
-    @Override
-    public void joinGame(JoinRequest request, String username) throws AlreadyTakenException
-    {
-        GameData gameData = getGame(request.gameID());
-        GameData newGame;
-
-        if(gameData != null)
-        {
-            if(Objects.equals(request.playerColor(), "WHITE") && gameData.whiteUsername() == null)
-            {
-                newGame = new GameData(
-                        gameData.gameID(), gameData.gameName(), username, gameData.blackUsername(), gameData.game()
-                );
-            }
-            else if (Objects.equals(request.playerColor(), "BLACK") && gameData.blackUsername() == null)
-            {
-                newGame = new GameData(
-                        gameData.gameID(), gameData.gameName(), gameData.whiteUsername(), username, gameData.game()
-                );
-            }
-            else
-            {
-                throw new AlreadyTakenException("Color already taken");
-            }
-            gameList.put(request.gameID(), newGame);
-        }
-        throw new AlreadyTakenException("Invalid game ID");
-
-    }
-
-    @Override
-    public List<GameData> listGames()
-    {
-        return new ArrayList<>(gameList.values());
+        games.clear();
     }
 }

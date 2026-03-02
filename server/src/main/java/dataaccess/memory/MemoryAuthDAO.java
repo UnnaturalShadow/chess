@@ -2,34 +2,36 @@ package dataaccess.memory;
 
 import dataaccess.AuthDAO;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-public class MemoryAuthDAO implements AuthDAO
-{
-    public Map<String, String> authTokens = new HashMap<>();
+public class MemoryAuthDAO implements AuthDAO {
+
+    private final Map<String, String> tokenStore = new HashMap<>();
 
     @Override
-    public void addToken(String username, String token)
-    {
-        authTokens.put(token, username);
+    public void addToken(String username, String token) {
+        tokenStore.put(token, username);
     }
 
     @Override
-    public String authenticate(String token)
-    {
-        return authTokens.getOrDefault(token, null);
+    public Optional<String> findUsernameByToken(String token) {
+        return Optional.ofNullable(tokenStore.get(token));
     }
 
     @Override
-    public void clear()
-    {
-        authTokens = new HashMap<>();
+    public void removeToken(String token) {
+        tokenStore.remove(token);
     }
 
     @Override
-    public void remove(String token)
-    {
-        authTokens.remove(token);
+    public void clear() {
+        tokenStore.clear();
+    }
+
+    public Map<String, String> getReadOnlyMap() {
+        return Collections.unmodifiableMap(tokenStore);
     }
 }

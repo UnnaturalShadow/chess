@@ -1,9 +1,11 @@
 package dataaccess;
 
+import java.util.Optional;
+
 public interface AuthDAO
 {
-    void clear();
-    String authenticate(String token);
-    void remove(String token);
     void addToken(String username, String token);
+    Optional<String> findUsernameByToken(String token);
+    void removeToken(String token);
+    void clear();
 }
