@@ -1,9 +1,6 @@
 package service;
 
-import dataaccess.AlreadyTakenException;
-import dataaccess.AuthDAO;
-import dataaccess.DataAccessException;
-import dataaccess.UserDAO;
+import dataaccess.*;
 import model.UserData;
 import requests.AuthResult;
 
@@ -44,12 +41,13 @@ public class UserService
     }
 
     public AuthResult login(String username, String password)
-            throws DataAccessException
-    {
+            throws DataAccessException, InvalidCredentialsException {
 
         validateInput(username, password);
 
-        authenticateUser(username, password);
+        if (!userDAO.validateCredentials(username, password)) {
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
 
         return issueToken(username);
     }
