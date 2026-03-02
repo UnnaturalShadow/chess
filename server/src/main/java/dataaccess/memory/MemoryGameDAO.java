@@ -1,7 +1,7 @@
 package dataaccess.memory;
 
-import dataaccess.AlreadyTakenException;
-import dataaccess.DataAccessException;
+import dataaccess.exceptions.AlreadyTakenException;
+import dataaccess.exceptions.DataAccessException;
 import dataaccess.GameDAO;
 import model.GameData;
 import model.PlayerColor;

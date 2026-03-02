@@ -1,8 +1,10 @@
-package handler;
+package handlers;
 
 import com.google.gson.Gson;
-import dataaccess.AlreadyTakenException;
-import dataaccess.DataAccessException;
+import dataaccess.exceptions.AlreadyTakenException;
+import dataaccess.exceptions.DataAccessException;
+import dataaccess.exceptions.InvalidCredentialsException;
+import dataaccess.exceptions.MissingFieldException;
 import io.javalin.http.Context;
 import requests.AuthResult;
 import requests.LoginRequest;
@@ -39,25 +41,18 @@ public class UserHandler
             RegisterRequest req = gson.fromJson(ctx.body(), RegisterRequest.class);
             AuthResult result = userService.register(req.username(), req.password(), req.email());
             ctx.result(buildJson("username", result.username(), "authToken", result.authToken()));
-        } catch (AlreadyTakenException e)
-        {
-            setErrorContext(ctx, "403 Already Taken Error: Username already in use", 403);
-        } catch (DataAccessException e)
-        {
-            setErrorContext(ctx, "400 Data Access Error: Failed to register user", 400);
-        }
+        } catch (MissingFieldException e) { setErrorContext(ctx, e.getMessage(), 400); }
+        catch (AlreadyTakenException e) { setErrorContext(ctx, e.getMessage(), 403); }
+        catch (DataAccessException e) { setErrorContext(ctx, "Internal Server Error", 500); }
     }
 
-    public void login(Context ctx)
-    {
-        try
-        {
+    public void login(Context ctx) {
+        try {
             LoginRequest req = gson.fromJson(ctx.body(), LoginRequest.class);
             AuthResult result = userService.login(req.username(), req.password());
             ctx.result(buildJson("username", result.username(), "authToken", result.authToken()));
-        } catch (DataAccessException e)
-        {
-            setErrorContext(ctx, "401 Unauthorized Error: Invalid username or password", 401);
-        }
+        } catch (MissingFieldException e) { setErrorContext(ctx, e.getMessage(), 400); }
+        catch (InvalidCredentialsException e) { setErrorContext(ctx, e.getMessage(), 401); }
+        catch (DataAccessException e) { setErrorContext(ctx, "Internal Server Error", 500); }
     }
 }
