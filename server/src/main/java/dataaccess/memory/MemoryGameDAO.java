@@ -52,7 +52,9 @@ public class MemoryGameDAO implements GameDAO
         switch (color) {
             case WHITE -> {
                 if (game.whiteUsername() != null)
+                {
                     throw new AlreadyTakenException("Error: White already taken");
+                }
 
                 updated = new GameData(
                         game.gameID(),
@@ -65,7 +67,9 @@ public class MemoryGameDAO implements GameDAO
 
             case BLACK -> {
                 if (game.blackUsername() != null)
+                {
                     throw new AlreadyTakenException("Error: Black already taken");
+                }
 
                 updated = new GameData(
                         game.gameID(),

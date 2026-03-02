@@ -30,8 +30,4 @@ public class MemoryAuthDAO implements AuthDAO {
     public void clear() {
         tokenStore.clear();
     }
-
-    public Map<String, String> getReadOnlyMap() {
-        return Collections.unmodifiableMap(tokenStore);
-    }
 }
