@@ -14,19 +14,19 @@ public class MemoryGameDAO implements GameDAO
     private final Map<Integer, GameData> games = new HashMap<>();
 
     @Override
-    public GameData save(GameData game)
+    public int save(GameData game)
     {
         int id = game.gameID() <= 0 ? nextId++ : game.gameID();
         GameData newGame = new GameData(id, game.whiteUsername(),
                 game.blackUsername(), game.gameName(), game.game());
         games.put(id, newGame);
-        return newGame;
+        return newGame.gameID();
     }
 
     @Override
-    public Optional<GameData> findById(int gameId)
+    public GameData findById(int gameId)
     {
-        return Optional.ofNullable(games.get(gameId));
+        return (games.get(gameId));
     }
 
     @Override
@@ -39,8 +39,7 @@ public class MemoryGameDAO implements GameDAO
     public void assignPlayer(int gameId, String username, PlayerColor color)
             throws AlreadyTakenException {
 
-        GameData game = findById(gameId)
-                .orElseThrow(() -> new IllegalStateException("Game not found in DAO"));
+        GameData game = findById(gameId);
 
         // Observer case
         if (color == null) {

@@ -10,10 +10,12 @@ import java.util.Optional;
 
 public interface GameDAO
 {
-    GameData save(GameData game) throws DataAccessException;
-    Optional<GameData> findById(int gameId);
-    List<GameData> findAll();
+    int save(GameData game) throws DataAccessException;
+    GameData findById(int gameId) throws DataAccessException;
+
+    List<GameData> findAll() throws DataAccessException;
     void assignPlayer(int gameId, String username, PlayerColor color)
             throws AlreadyTakenException, DataAccessException;
-    void clear();
+
+    void clear() throws DataAccessException;
 }

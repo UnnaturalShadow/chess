@@ -25,7 +25,8 @@ public class GameService {
     // LIST GAMES
     // -------------------------------------------------------
 
-    public List<GameData> list(String token) throws InvalidCredentialsException {
+    public List<GameData> list(String token) throws InvalidCredentialsException, DataAccessException
+    {
         authenticate(token);
         return gameDAO.findAll();
     }
@@ -53,7 +54,7 @@ public class GameService {
                 new ChessGame()
         );
 
-        return gameDAO.save(game).gameID();
+        return gameDAO.save(game);
     }
 
     // -------------------------------------------------------
@@ -72,6 +73,11 @@ public class GameService {
         PlayerColor color = validateJoinRequest(request);
 
         // DAO handles occupancy check and throws AlreadyTakenException if needed
+        model.GameData game = gameDAO.findById(request.gameID());
+        if(game == null)
+        {
+            throw new  GameNotFoundException("Error: Game not found");
+        }
         gameDAO.assignPlayer(request.gameID(), username, color);
     }
 
@@ -86,19 +92,20 @@ public class GameService {
     }
 
     private PlayerColor validateJoinRequest(JoinRequest request)
-            throws MissingFieldException, GameNotFoundException {
+            throws MissingFieldException, GameNotFoundException, DataAccessException
+    {
 
-        if (request == null) {
+        if (request == null)
+        {
             throw new MissingFieldException("Error: Join request cannot be null");
         }
 
-        if (request.gameID() <= 0) {
+        if (request.gameID() <= 0)
+        {
             throw new GameNotFoundException("Error: Game ID must be positive");
         }
 
-        gameDAO.findById(request.gameID())
-                .orElseThrow(() ->
-                        new GameNotFoundException("Error: Game not found"));
+        gameDAO.findById(request.gameID());
 
         return parseColor(request.playerColor());
     }

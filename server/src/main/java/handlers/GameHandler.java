@@ -27,7 +27,7 @@ public class GameHandler {
     // LIST
     // -------------------------------------------------------
 
-    public void list(Context ctx) {
+    public void list(Context ctx) throws DataAccessException{
 
         String token = ctx.header("authorization");
 

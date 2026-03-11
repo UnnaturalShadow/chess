@@ -132,7 +132,7 @@ public class ServiceTests {
         JoinRequest req = new JoinRequest("WHITE", id);
         gameService.join(token, req);
 
-        GameData g = gameDAO.findById(id).get();
+        GameData g = gameDAO.findById(id);
         assertEquals("player", g.whiteUsername());
     }
 
