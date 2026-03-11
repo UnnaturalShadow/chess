@@ -54,9 +54,12 @@ public class AuthService
     private String requireAuthenticated(String token) throws DataAccessException
     {
         requireNonBlank(token, "Token required");
-
-        return authDAO.findUsernameByToken(token)
-                .orElseThrow(() -> new DataAccessException("Invalid or expired token"));
+        String username = authDAO.findUsernameByToken(token);
+        if(username == null)
+        {
+            throw new DataAccessException("Error: User not found.");
+        }
+        return authDAO.findUsernameByToken(token);
     }
 
     private void requireNonBlank(String value, String message) throws DataAccessException

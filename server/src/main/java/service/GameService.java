@@ -85,10 +85,14 @@ public class GameService {
     // HELPER METHODS
     // -------------------------------------------------------
 
-    private String authenticate(String token) throws InvalidCredentialsException {
-        return authDAO.findUsernameByToken(token)
-                .orElseThrow(() ->
-                        new InvalidCredentialsException("Error: Authentication required"));
+    private String authenticate(String token) throws InvalidCredentialsException, DataAccessException
+    {
+        String username = authDAO.findUsernameByToken(token);
+        if(username == null)
+        {
+            throw new InvalidCredentialsException("Error: User not found.");
+        }
+        return authDAO.findUsernameByToken(token);
     }
 
     private PlayerColor validateJoinRequest(JoinRequest request)

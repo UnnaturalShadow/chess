@@ -17,8 +17,8 @@ public class MemoryAuthDAO implements AuthDAO {
     }
 
     @Override
-    public Optional<String> findUsernameByToken(String token) {
-        return Optional.ofNullable(tokenStore.get(token));
+    public String findUsernameByToken(String token) {
+        return (tokenStore.get(token));
     }
 
     @Override
