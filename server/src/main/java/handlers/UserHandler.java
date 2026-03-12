@@ -27,7 +27,7 @@ public class UserHandler
         this.userService = Objects.requireNonNull(userService);
     }
 
-    public void clear(Context ctx)
+    public void clear(Context ctx) throws DataAccessException, MissingFieldException
     {
         userService.clear();
         ctx.result("" +

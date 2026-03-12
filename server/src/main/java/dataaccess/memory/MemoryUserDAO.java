@@ -1,6 +1,7 @@
 package dataaccess.memory;
 
 import dataaccess.UserDAO;
+import dataaccess.exceptions.DataAccessException;
 import model.UserData;
 
 import java.util.HashMap;
@@ -20,17 +21,20 @@ public class MemoryUserDAO implements UserDAO
     }
 
     @Override
-    public Optional<UserData> findByUsername(String username)
+    public UserData findByUsername(String username)
     {
-        return Optional.ofNullable(users.get(username));
+        return (users.get(username));
     }
 
     @Override
-    public boolean validateCredentials(String username, String password)
+    public boolean validateCredentials(String username, String password) throws DataAccessException
     {
-        return findByUsername(username)
-                .map(u -> Objects.equals(u.password(), password))
-                .orElse(false);
+        UserData user = findByUsername(username);
+        if (user != null)
+        {
+            return Objects.equals(user.password(), password);
+        }
+        throw new DataAccessException("Error: User does not exist");
     }
 
     @Override

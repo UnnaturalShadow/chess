@@ -1,6 +1,10 @@
 package server;
 
 import com.google.gson.Gson;
+import dataaccess.database.DatabaseAuthDAO;
+import dataaccess.database.DatabaseGameDAO;
+import dataaccess.database.DatabaseUserDAO;
+import dataaccess.exceptions.DataAccessException;
 import dataaccess.memory.MemoryAuthDAO;
 import dataaccess.memory.MemoryGameDAO;
 import dataaccess.memory.MemoryUserDAO;
@@ -15,19 +19,21 @@ import service.AuthService;
 import service.GameService;
 import service.UserService;
 
+import dataaccess.exceptions.DataAccessException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class Server
 {
+    private AuthDAO authDAO;
+    private UserDAO userDAO;
+    private GameDAO gameDAO;
 
     private final Javalin app;
 
     // --- DAOs ---
-    private final AuthDAO authDAO = new MemoryAuthDAO();
-    private final UserDAO userDAO = new MemoryUserDAO();
-    private final GameDAO gameDAO = new MemoryGameDAO();
+
 
     // --- Services ---
     private final AuthService authService = new AuthService(authDAO);
@@ -41,7 +47,18 @@ public class Server
 
     public Server()
     {
+        try
+        {
+            authDAO = new DatabaseAuthDAO();
+            userDAO = new DatabaseUserDAO();
+            gameDAO = new DatabaseGameDAO();
+        }
+        catch (DataAccessException e)
+        {
+            System.err.println("Error connecting to database.");
+        }
         app = Javalin.create(config -> config.staticFiles.add("/web"));
+
 
         // --- Routes ---
         app.delete("/db", ctx ->

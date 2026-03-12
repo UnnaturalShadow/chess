@@ -26,7 +26,7 @@ public class UserService
 
     // --- Public API ---
 
-    public void clear()
+    public void clear() throws DataAccessException
     {
         userDAO.clear();
     }
@@ -66,16 +66,16 @@ public class UserService
         }
     }
 
-    private void ensureUserDoesNotExist(String username) throws AlreadyTakenException
+    private void ensureUserDoesNotExist(String username) throws AlreadyTakenException, DataAccessException
     {
-        Optional<UserData> existing = userDAO.findByUsername(username);
-        if (existing.isPresent())
+        UserData existing = userDAO.findByUsername(username);
+        if (existing != null)
         {
             throw new AlreadyTakenException("Error: Username already in use"); // 403
         }
     }
 
-    private void authenticateUser(String username, String password) throws InvalidCredentialsException
+    private void authenticateUser(String username, String password) throws InvalidCredentialsException, DataAccessException
     {
         boolean valid = userDAO.validateCredentials(username, password);
         if (!valid)
