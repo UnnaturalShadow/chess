@@ -24,9 +24,7 @@ public class GameService {
     // -------------------------------------------------------
     // LIST GAMES
     // -------------------------------------------------------
-
-    public List<GameData> list(String token) throws InvalidCredentialsException, DataAccessException
-    {
+    public List<GameData> list(String token) throws InvalidCredentialsException, DataAccessException {
         authenticate(token);
         return gameDAO.findAll();
     }
@@ -34,15 +32,12 @@ public class GameService {
     // -------------------------------------------------------
     // CREATE GAME
     // -------------------------------------------------------
-
     public int create(String token, CreateRequest request)
             throws InvalidCredentialsException, MissingFieldException, DataAccessException {
 
         authenticate(token);
 
-        if (request == null ||
-                request.gameName() == null ||
-                request.gameName().isBlank()) {
+        if (request == null || request.gameName() == null || request.gameName().isBlank()) {
             throw new MissingFieldException("Error: Game name is required");
         }
 
@@ -60,7 +55,6 @@ public class GameService {
     // -------------------------------------------------------
     // JOIN GAME
     // -------------------------------------------------------
-
     public void join(String token, JoinRequest request)
             throws InvalidCredentialsException,
             MissingFieldException,
@@ -70,52 +64,37 @@ public class GameService {
 
         String username = authenticate(token);
 
-        PlayerColor color = validateJoinRequest(request);
-
-        // DAO handles occupancy check and throws AlreadyTakenException if needed
-        model.GameData game = gameDAO.findById(request.gameID());
-        if(game == null)
-        {
-            throw new  GameNotFoundException("Error: Game not found");
+        if (request == null) {
+            throw new MissingFieldException("Error: Join request cannot be null");
         }
+
+        if (request.gameID() <= 0) {
+            throw new GameNotFoundException("Error: Game ID must be positive");
+        }
+
+        GameData game = gameDAO.findById(request.gameID());
+        if (game == null) {
+            throw new GameNotFoundException("Error: Game not found");
+        }
+
+        PlayerColor color = parseColor(request.playerColor());
+
+        // Assign player (DAO handles occupancy check)
         gameDAO.assignPlayer(request.gameID(), username, color);
     }
 
     // -------------------------------------------------------
     // HELPER METHODS
     // -------------------------------------------------------
-
-    private String authenticate(String token) throws InvalidCredentialsException, DataAccessException
-    {
+    private String authenticate(String token) throws InvalidCredentialsException, DataAccessException {
         String username = authDAO.findUsernameByToken(token);
-        if(username == null)
-        {
+        if (username == null) {
             throw new InvalidCredentialsException("Error: User not found.");
         }
-        return authDAO.findUsernameByToken(token);
-    }
-
-    private PlayerColor validateJoinRequest(JoinRequest request)
-            throws MissingFieldException, GameNotFoundException, DataAccessException
-    {
-
-        if (request == null)
-        {
-            throw new MissingFieldException("Error: Join request cannot be null");
-        }
-
-        if (request.gameID() <= 0)
-        {
-            throw new GameNotFoundException("Error: Game ID must be positive");
-        }
-
-        gameDAO.findById(request.gameID());
-
-        return parseColor(request.playerColor());
+        return username;
     }
 
     private PlayerColor parseColor(String raw) throws MissingFieldException {
-
         if (raw == null || raw.isBlank()) {
             throw new MissingFieldException("Error: Color is required");
         }
