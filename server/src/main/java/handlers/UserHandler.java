@@ -1,10 +1,7 @@
 package handlers;
 
 import com.google.gson.Gson;
-import dataaccess.exceptions.AlreadyTakenException;
-import dataaccess.exceptions.DataAccessException;
-import dataaccess.exceptions.InvalidCredentialsException;
-import dataaccess.exceptions.MissingFieldException;
+import dataaccess.exceptions.*;
 import io.javalin.http.Context;
 import requests.AuthResult;
 import requests.LoginRequest;
@@ -52,6 +49,7 @@ public class UserHandler
             AuthResult result = userService.login(req.username(), req.password());
             ctx.result(buildJson("username", result.username(), "authToken", result.authToken()));
         } catch (MissingFieldException e) { setErrorContext(ctx, e.getMessage(), 400); }
+        catch (UserNotAuthenticatedException e){ setErrorContext(ctx, "Error: User is not authenticated", 401); }
         catch (InvalidCredentialsException e) { setErrorContext(ctx, e.getMessage(), 401); }
         catch (DataAccessException e) { setErrorContext(ctx, "Internal Server Error", 500); }
     }

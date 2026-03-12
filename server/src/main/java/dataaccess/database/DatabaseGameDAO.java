@@ -127,7 +127,7 @@ public class DatabaseGameDAO implements GameDAO
                     """
             CREATE TABLE IF NOT EXISTS `authdata` (
               `idauthData` INT NOT NULL AUTO_INCREMENT,
-              `userName` VARCHAR(100) NOT NULL,
+              `username` VARCHAR(100) NOT NULL,
               `token` VARCHAR(100) NOT NULL,
               PRIMARY KEY (`idauthData`),
               UNIQUE INDEX `idauthData_UNIQUE` (`idauthData` ASC) VISIBLE);

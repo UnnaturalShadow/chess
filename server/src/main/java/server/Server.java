@@ -5,9 +5,6 @@ import dataaccess.database.DatabaseAuthDAO;
 import dataaccess.database.DatabaseGameDAO;
 import dataaccess.database.DatabaseUserDAO;
 import dataaccess.exceptions.DataAccessException;
-import dataaccess.memory.MemoryAuthDAO;
-import dataaccess.memory.MemoryGameDAO;
-import dataaccess.memory.MemoryUserDAO;
 import dataaccess.AuthDAO;
 import dataaccess.GameDAO;
 import dataaccess.UserDAO;
@@ -19,50 +16,52 @@ import service.AuthService;
 import service.GameService;
 import service.UserService;
 
-import dataaccess.exceptions.DataAccessException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
-public class Server
-{
+public class Server {
+
+    // --- DAOs ---
     private AuthDAO authDAO;
     private UserDAO userDAO;
     private GameDAO gameDAO;
 
-    private final Javalin app;
-
-    // --- DAOs ---
-
-
     // --- Services ---
-    private final AuthService authService = new AuthService(authDAO);
-    private final UserService userService = new UserService(userDAO, authDAO);
-    private final GameService gameService = new GameService(gameDAO, authDAO);
+    private AuthService authService;
+    private UserService userService;
+    private GameService gameService;
 
     // --- Handlers ---
-    private final AuthHandler authHandler = new AuthHandler(authService);
-    private final UserHandler userHandler = new UserHandler(userService);
-    private final GameHandler gameHandler = new GameHandler(gameService);
+    private AuthHandler authHandler;
+    private UserHandler userHandler;
+    private GameHandler gameHandler;
 
-    public Server()
-    {
-        try
-        {
+    private final Javalin app;
+
+    public Server() {
+
+        try {
             authDAO = new DatabaseAuthDAO();
             userDAO = new DatabaseUserDAO();
             gameDAO = new DatabaseGameDAO();
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Error connecting to database", e);
         }
-        catch (DataAccessException e)
-        {
-            System.err.println("Error connecting to database.");
-        }
+
+        // Create services AFTER DAOs exist
+        authService = new AuthService(authDAO);
+        userService = new UserService(userDAO, authDAO);
+        gameService = new GameService(gameDAO, authDAO);
+
+        // Create handlers AFTER services exist
+        authHandler = new AuthHandler(authService);
+        userHandler = new UserHandler(userService);
+        gameHandler = new GameHandler(gameService);
+
         app = Javalin.create(config -> config.staticFiles.add("/web"));
 
-
         // --- Routes ---
-        app.delete("/db", ctx ->
-        {
+        app.delete("/db", ctx -> {
             userDAO.clear();
             gameDAO.clear();
             authDAO.clear();
@@ -78,33 +77,27 @@ public class Server
         app.put("/game", gameHandler::join);
     }
 
-    public int run(int desiredPort)
-    {
+    public int run(int desiredPort) {
         app.start(desiredPort);
         return app.port();
     }
 
-    public void stop()
-    {
+    public void stop() {
         app.stop();
     }
 
     // --- Helper methods for JSON responses ---
-    public static String buildJson(Object... keysAndVals)
-    {
+    public static String buildJson(Object... keysAndVals) {
         Map<String, Object> pairs = new HashMap<>();
-        for (int i = 1; i < keysAndVals.length; i++)
-        {
-            if (i % 2 == 1)
-            {
+        for (int i = 1; i < keysAndVals.length; i++) {
+            if (i % 2 == 1) {
                 pairs.put((String) keysAndVals[i - 1], keysAndVals[i]);
             }
         }
         return new Gson().toJson(pairs);
     }
 
-    public static void setErrorContext(io.javalin.http.Context ctx, String message, int status)
-    {
+    public static void setErrorContext(io.javalin.http.Context ctx, String message, int status) {
         ctx.result(buildJson("message", message));
         ctx.status(status);
     }

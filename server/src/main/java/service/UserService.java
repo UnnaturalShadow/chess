@@ -1,27 +1,26 @@
 package service;
 
 import dataaccess.*;
-import dataaccess.exceptions.AlreadyTakenException;
-import dataaccess.exceptions.DataAccessException;
-import dataaccess.exceptions.InvalidCredentialsException;
-import dataaccess.exceptions.MissingFieldException;
+import dataaccess.exceptions.*;
 
 import model.UserData;
 import requests.AuthResult;
 
 import java.util.Objects;
-import java.util.Optional;
+import java.util.UUID;
 
 public class UserService
 {
 
     private final UserDAO userDAO;
     private final AuthService authService;
+    private final AuthDAO authDAO;
 
     public UserService(UserDAO userDAO, AuthDAO authDAO)
     {
         this.userDAO = Objects.requireNonNull(userDAO);
         this.authService = new AuthService(authDAO);
+        this.authDAO = authDAO;
     }
 
     // --- Public API ---
@@ -32,25 +31,24 @@ public class UserService
     }
 
     public AuthResult register(String username, String password, String email)
-            throws DataAccessException, AlreadyTakenException, MissingFieldException
-    {
-
+            throws DataAccessException, AlreadyTakenException, MissingFieldException {
         validateInput(username, password);
-
         ensureUserDoesNotExist(username);
-
         UserData newUser = new UserData(username, password, email);
         userDAO.save(newUser);
-
         return issueToken(username);
     }
 
     public AuthResult login(String username, String password)
-            throws DataAccessException, InvalidCredentialsException, MissingFieldException
+            throws DataAccessException, InvalidCredentialsException, UserNotAuthenticatedException
     {
 
         validateInput(username, password);
-
+        UserData existing = userDAO.findByUsername(username);
+        if (existing == null)
+        {
+            throw new UserNotAuthenticatedException("Error: User not registered."); // 403
+        }
         authenticateUser(username, password);
 
         return issueToken(username);

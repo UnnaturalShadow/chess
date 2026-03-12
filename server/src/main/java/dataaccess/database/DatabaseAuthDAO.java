@@ -14,6 +14,11 @@ import static java.sql.Statement.RETURN_GENERATED_KEYS;
 
 public class DatabaseAuthDAO implements AuthDAO
 {
+    public DatabaseAuthDAO() throws DataAccessException
+    {
+        configureDatabase();
+    }
+
     @Override
     public void clear() throws DataAccessException
     {
@@ -76,7 +81,7 @@ public class DatabaseAuthDAO implements AuthDAO
                     """
             CREATE TABLE IF NOT EXISTS `authdata` (
               `idauthData` INT NOT NULL AUTO_INCREMENT,
-              `userName` VARCHAR(100) NOT NULL,
+              `username` VARCHAR(100) NOT NULL,
               `token` VARCHAR(100) NOT NULL,
               PRIMARY KEY (`idauthData`),
               UNIQUE INDEX `idauthData_UNIQUE` (`idauthData` ASC) VISIBLE);

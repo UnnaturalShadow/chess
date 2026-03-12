@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 import static dataaccess.DatabaseManager.getConnection;
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
@@ -26,6 +27,7 @@ public class DatabaseUserDAO implements UserDAO
     {
         String sqlCommand = "TRUNCATE TABLE users";
         executeCommand((sqlCommand));
+
     }
 
     public void save(UserData user) throws DataAccessException
@@ -37,16 +39,20 @@ public class DatabaseUserDAO implements UserDAO
 
     public UserData findByUsername(String username) throws DataAccessException
     {
+
         String sqlCommand = "SELECT username, password, email FROM users WHERE username = ?";
         return executeQuery(sqlCommand, results -> new UserData(
-                results.getString(1), results.getString(2), results.getString(3)));
+                results.getString("username"),
+                results.getString("password"),
+                results.getString("email")
+        ), username);
     }
 
     @Override
     public boolean validateCredentials(String username, String password) throws DataAccessException
     {
-        String sqlCommand = "SELECT password FROM users WHERE username = ? AND password = ?";
-        String dbPassword = executeQuery(sqlCommand, results -> results.getString("password"), username);
+        String sqlCommand = "SELECT password FROM users WHERE username = ?";
+        String dbPassword = executeQuery(sqlCommand, rs -> rs.getString("password"), username);
         return dbPassword != null && BCrypt.checkpw(password, dbPassword);
     }
 
@@ -82,7 +88,7 @@ public class DatabaseUserDAO implements UserDAO
                     """
             CREATE TABLE IF NOT EXISTS `authdata` (
               `idauthData` INT NOT NULL AUTO_INCREMENT,
-              `userName` VARCHAR(100) NOT NULL,
+              `username` VARCHAR(100) NOT NULL,
               `token` VARCHAR(100) NOT NULL,
               PRIMARY KEY (`idauthData`),
               UNIQUE INDEX `idauthData_UNIQUE` (`idauthData` ASC) VISIBLE);
@@ -127,7 +133,7 @@ public class DatabaseUserDAO implements UserDAO
         }
     }
 
-    public <T> T executeQuery(String query, DatabaseGameDAO.ResultMapper<T> resultMap, Object... params) throws DataAccessException
+    public <T> T executeQuery(String query, ResultMapper<T> resultMap, Object... params) throws DataAccessException
     {
         try (var conn = getConnection();
              var preparedStatement = conn.prepareStatement(query))
