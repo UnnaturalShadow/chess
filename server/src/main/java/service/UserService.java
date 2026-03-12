@@ -7,20 +7,19 @@ import model.UserData;
 import requests.AuthResult;
 
 import java.util.Objects;
-import java.util.UUID;
 
 public class UserService
 {
 
     private final UserDAO userDAO;
     private final AuthService authService;
-    private final AuthDAO authDAO;
+
 
     public UserService(UserDAO userDAO, AuthDAO authDAO)
     {
         this.userDAO = Objects.requireNonNull(userDAO);
         this.authService = new AuthService(authDAO);
-        this.authDAO = authDAO;
+
     }
 
     // --- Public API ---

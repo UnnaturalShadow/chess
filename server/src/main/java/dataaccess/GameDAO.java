@@ -6,7 +6,6 @@ import model.GameData;
 import model.PlayerColor;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface GameDAO
 {

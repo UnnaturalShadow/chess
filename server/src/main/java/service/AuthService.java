@@ -30,7 +30,7 @@ public class AuthService
     }
 
     public void logout(String token) throws DataAccessException, InvalidCredentialsException {
-        String user = requireAuthenticated(token);
+        requireAuthenticated(token);
         revokeToken(token);
     }
 
@@ -52,13 +52,12 @@ public class AuthService
         authDAO.removeToken(token);
     }
 
-    private String requireAuthenticated(String token) throws DataAccessException, InvalidCredentialsException {
+    private void requireAuthenticated(String token) throws DataAccessException, InvalidCredentialsException {
         requireNonBlank(token, "Token required");
         String username = authDAO.findUsernameByToken(token);
         if (username == null) {
             throw new InvalidCredentialsException("Error: Invalid or expired token");
         }
-        return username;
     }
 
     private void requireNonBlank(String value, String message) throws DataAccessException

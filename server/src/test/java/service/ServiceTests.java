@@ -4,7 +4,6 @@ import dataaccess.memory.MemoryAuthDAO;
 import dataaccess.memory.MemoryGameDAO;
 import dataaccess.memory.MemoryUserDAO;
 import dataaccess.exceptions.*;
-import model.PlayerColor;
 import model.GameData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,11 +20,11 @@ public class ServiceTests {
     private AuthService authService;
     private GameService gameService;
 
-    private MemoryUserDAO userDAO;
-    private MemoryAuthDAO authDAO;
+    MemoryUserDAO userDAO;
+    MemoryAuthDAO authDAO;
     private MemoryGameDAO gameDAO;
 
-    private String token;
+    String token;
 
     @BeforeEach
     void setup() throws DataAccessException, AlreadyTakenException, MissingFieldException {
@@ -111,7 +110,7 @@ public class ServiceTests {
         assertTrue(id > 0);
         List<GameData> games = gameService.list(token);
         assertEquals(1, games.size());
-        assertEquals("My Game", games.get(0).gameName());
+        assertEquals("My Game", games.getFirst().gameName());
     }
 
     @Test
