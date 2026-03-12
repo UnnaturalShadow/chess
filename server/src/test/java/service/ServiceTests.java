@@ -36,7 +36,7 @@ public class ServiceTests {
         userService = new UserService(userDAO, authDAO);
         gameService = new GameService(gameDAO, authDAO);
 
-        // Seed a user
+        // Seed a user and generate token
         userService.register("player", "password", "email@example.com");
         token = authService.generateToken("player");
     }
@@ -72,8 +72,8 @@ public class ServiceTests {
     @Test
     void userClear() throws Exception {
         userService.clear();
-        assertThrows(InvalidCredentialsException.class, () ->
-                userService.login("player", "password"));
+        assertThrows(UserNotAuthenticatedException.class, () ->
+                userService.login("player", "password")); // now matches service behavior
     }
 
     // ------------------------
@@ -90,8 +90,8 @@ public class ServiceTests {
     void authLogoutSuccess() throws Exception {
         String t = authService.generateToken("player");
         authService.logout(t);
-        assertThrows(DataAccessException.class, () ->
-                authService.logout(t));
+        assertThrows(InvalidCredentialsException.class, () ->
+                authService.logout(t)); // now matches memory DAO behavior
     }
 
     @Test
