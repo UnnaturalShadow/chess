@@ -27,8 +27,7 @@ public class GameHandler {
     // LIST
     // -------------------------------------------------------
 
-    public void list(Context ctx) throws DataAccessException{
-
+    public void list(Context ctx) {
         String token = ctx.header("authorization");
 
         try {
@@ -38,6 +37,11 @@ public class GameHandler {
 
         } catch (InvalidCredentialsException e) {
             setErrorContext(ctx, e.getMessage(), 401);
+
+        } catch (DataAccessException e) {
+            setErrorContext(ctx, "Internal Server Error", 500);
+        } catch (Exception e) { // catch everything else
+            setErrorContext(ctx, "Unexpected error", 500);
         }
     }
 

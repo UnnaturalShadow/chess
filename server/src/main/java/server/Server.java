@@ -62,10 +62,15 @@ public class Server {
 
         // --- Routes ---
         app.delete("/db", ctx -> {
-            userDAO.clear();
-            gameDAO.clear();
-            authDAO.clear();
-            ctx.status(200);
+            try {
+                userDAO.clear();
+                gameDAO.clear();
+                authDAO.clear();
+                ctx.result(buildJson("message", "Database cleared successfully"));
+                ctx.status(200);
+            } catch (DataAccessException e) {
+                setErrorContext(ctx, "Internal Server Error: Unable to clear database", 500);
+            }
         });
 
         app.post("/user", userHandler::register);

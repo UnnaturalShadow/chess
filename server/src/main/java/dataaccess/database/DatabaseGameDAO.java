@@ -20,7 +20,7 @@ import static java.sql.Statement.RETURN_GENERATED_KEYS;
 
 public class DatabaseGameDAO implements GameDAO {
 
-    private static final Gson serializer = new Gson();
+    private static final Gson gson = new Gson();
 
     public DatabaseGameDAO() throws DataAccessException {
         configureDatabase();
@@ -29,82 +29,84 @@ public class DatabaseGameDAO implements GameDAO {
     // -------------------------------------------------------
     // SAVE
     // -------------------------------------------------------
+    @Override
     public int save(GameData game) throws DataAccessException {
         String sqlCommand = "INSERT INTO games (name, whiteUsername, blackUsername, game) VALUES (?, ?, ?, ?)";
-        String json = serializer.toJson(game);
+        String json = gson.toJson(game);
+        // Ensure null for usernames initially
         return executeCommand(sqlCommand, game.gameName(), null, null, json);
     }
 
     // -------------------------------------------------------
     // FIND BY ID
     // -------------------------------------------------------
+    @Override
     public GameData findById(int gameId) throws DataAccessException {
         String sqlCommand = "SELECT * FROM games WHERE idgames = ?";
         return executeQueryAndGetOne(sqlCommand, results -> new GameData(
-                results.getInt("idgames"),
-                results.getString("name"),
-                results.getString("whiteUsername"),
-                results.getString("blackUsername"),
-                serializer.fromJson(results.getString("game"), ChessGame.class)
+                results.getInt("idgames"),                // gameID
+                results.getString("whiteUsername"),       // whiteUsername
+                results.getString("blackUsername"),       // blackUsername
+                results.getString("name"),                // gameName
+                gson.fromJson(results.getString("game"), ChessGame.class) // game
         ), gameId);
     }
 
     // -------------------------------------------------------
     // FIND ALL
     // -------------------------------------------------------
+    @Override
     public List<GameData> findAll() throws DataAccessException {
-        List<Integer> gameIds = new ArrayList<>();
-        executeQueryAndGetOne(
-                "SELECT idgames FROM games",
-                results -> {
-                    do {
-                        gameIds.add(results.getInt("idgames"));
-                    } while (results.next());
-                    return null;
-                }
-        );
-
         List<GameData> games = new ArrayList<>();
-        for (int id : gameIds) {
-            games.add(findById(id));
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM games");
+             ResultSet results = ps.executeQuery()) {
+
+            while (results.next()) {
+                games.add(new GameData(
+                        results.getInt("idgames"),
+                        results.getString("whiteUsername"),
+                        results.getString("blackUsername"),
+                        results.getString("name"),
+                        gson.fromJson(results.getString("game"), ChessGame.class)
+                ));
+            }
+
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to retrieve games", e);
         }
+
         return games;
     }
 
     // -------------------------------------------------------
     // ASSIGN PLAYER
     // -------------------------------------------------------
+    @Override
     public void assignPlayer(int gameId, String username, PlayerColor color)
             throws AlreadyTakenException, DataAccessException {
 
-        GameData game = findById(gameId);
-        if (game == null) {
-            throw new DataAccessException("Game not found");
+        String sqlCommand;
+
+        if (color == PlayerColor.WHITE) {
+            sqlCommand = "UPDATE games SET whiteUsername = ? WHERE idgames = ? AND (whiteUsername IS NULL OR whiteUsername = '' OR whiteUsername = 'null')";
+        } else if (color == PlayerColor.BLACK) {
+            sqlCommand = "UPDATE games SET blackUsername = ? WHERE idgames = ? AND (blackUsername IS NULL OR blackUsername = '' OR blackUsername = 'null')";
+        } else {
+            throw new DataAccessException("Invalid player color");
         }
 
-        String sqlCommand;
-        switch (color) {
-            case WHITE:
-                if (game.whiteUsername() == null) {
-                    sqlCommand = "UPDATE games SET whiteUsername = ? WHERE idgames = ?";
-                    executeCommand(sqlCommand, username, gameId);
-                    return;
-                }
-                break;
-            case BLACK:
-                if (game.blackUsername() == null) {
-                    sqlCommand = "UPDATE games SET blackUsername = ? WHERE idgames = ?";
-                    executeCommand(sqlCommand, username, gameId);
-                    return;
-                }
-                break;
+        int rowsAffected = executeCommand(sqlCommand, username, gameId);
+        if (rowsAffected == 0) {
+            throw new AlreadyTakenException("Error: " + color + " player already assigned");
         }
-        throw new AlreadyTakenException("Color already taken");
     }
 
     // -------------------------------------------------------
     // CLEAR TABLE
     // -------------------------------------------------------
+    @Override
     public void clear() throws DataAccessException {
         String sqlCommand = "TRUNCATE TABLE games";
         executeCommand(sqlCommand);
@@ -120,17 +122,18 @@ public class DatabaseGameDAO implements GameDAO {
             for (int i = 0; i < params.length; i++) {
                 ps.setObject(i + 1, params[i]);
             }
-            ps.executeUpdate();
+            int rowsUpdated = ps.executeUpdate();
 
             try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     return generatedKeys.getInt(1);
                 }
             }
+
+            return rowsUpdated; // fallback for updates without generated keys
         } catch (SQLException e) {
-            throw new DataAccessException("Unable to update database", e);
+            throw new DataAccessException("Unable to execute database command", e);
         }
-        return 0;
     }
 
     // -------------------------------------------------------

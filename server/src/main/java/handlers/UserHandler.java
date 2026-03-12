@@ -24,11 +24,16 @@ public class UserHandler
         this.userService = Objects.requireNonNull(userService);
     }
 
-    public void clear(Context ctx) throws DataAccessException, MissingFieldException
-    {
-        userService.clear();
-        ctx.result("" +
-                "{}");
+    public void clear(Context ctx) {
+        try {
+            userService.clear();
+            ctx.result(buildJson("message", "Database cleared successfully"));
+            ctx.status(200);
+        } catch (DataAccessException e) {
+            setErrorContext(ctx, "Internal Server Error: Unable to clear database", 500);
+        } catch (MissingFieldException e) {
+            setErrorContext(ctx, e.getMessage(), 400);
+        }
     }
 
     public void register(Context ctx)
