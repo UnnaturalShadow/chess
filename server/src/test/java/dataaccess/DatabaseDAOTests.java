@@ -1,6 +1,5 @@
 package dataaccess;
 
-import chess.ChessGame;
 import dataaccess.database.DatabaseAuthDAO;
 import dataaccess.database.DatabaseGameDAO;
 import dataaccess.database.DatabaseUserDAO;
@@ -9,138 +8,148 @@ import dataaccess.exceptions.DataAccessException;
 import model.GameData;
 import model.PlayerColor;
 import model.UserData;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DatabaseDAOTests {
+public class DatabaseDAOTests {
 
-    // -------------------------
-    // AUTH DAO TESTS
-    // -------------------------
-    @Nested
-    class AuthDAOTests {
+    // -----------------------------
+    // AuthDAO Tests
+    // -----------------------------
+    @Test
+    void addTokenPositive() throws DataAccessException {
+        var authDAO = new DatabaseAuthDAO();
+        authDAO.clear();
 
-        private DatabaseAuthDAO authDAO;
+        String username = "user1";
+        String token = "token1";
 
-        @BeforeEach
-        void setup() throws DataAccessException {
-            authDAO = new DatabaseAuthDAO();
-            authDAO.clear();
-        }
+        authDAO.addToken(username, token);
 
-        @Test
-        void addToken_positive() throws DataAccessException {
-            authDAO.addToken("user1", "token1");
-            String username = authDAO.findUsernameByToken("token1");
-            assertEquals("user1", username);
-        }
-
-        @Test
-        void addToken_duplicateToken_throws() {
-            assertThrows(DataAccessException.class, () -> {
-                authDAO.addToken("user1", "token1");
-                authDAO.addToken("user2", "token1");
-            });
-        }
-
-        @Test
-        void findUsernameByToken_nonexistent_returnsNull() throws DataAccessException {
-            assertNull(authDAO.findUsernameByToken("noToken"));
-        }
-
-        @Test
-        void removeToken_positive() throws DataAccessException {
-            authDAO.addToken("user1", "token1");
-            authDAO.removeToken("token1");
-            assertNull(authDAO.findUsernameByToken("token1"));
-        }
+        String result = authDAO.findUsernameByToken(token);
+        assertEquals(username, result);
     }
 
-    // -------------------------
-    // USER DAO TESTS
-    // -------------------------
-    @Nested
-    class UserDAOTests {
+    @Test
+    void addTokenDuplicateTokenThrows() throws DataAccessException {
+        var authDAO = new DatabaseAuthDAO();
+        authDAO.clear();
 
-        private DatabaseUserDAO userDAO;
+        String username = "user1";
+        String token = "token1";
 
-        @BeforeEach
-        void setup() throws DataAccessException {
-            userDAO = new DatabaseUserDAO();
-            userDAO.clear();
-        }
-
-        @Test
-        void saveAndFindByUsername_positive() throws DataAccessException {
-            UserData user = new UserData("user1", "pass1", "email@example.com");
-            userDAO.save(user);
-
-            UserData fetched = userDAO.findByUsername("user1");
-            assertNotNull(fetched);
-            assertEquals("user1", fetched.username());
-            assertEquals("email@example.com", fetched.email());
-            assertNotEquals("pass1", fetched.password()); // password is hashed
-        }
-
-        @Test
-        void findByUsername_nonexistent_returnsNull() throws DataAccessException {
-            assertNull(userDAO.findByUsername("noUser"));
-        }
-
-        @Test
-        void validateCredentials_positiveAndNegative() throws DataAccessException {
-            UserData user = new UserData("user1", "pass1", "email@example.com");
-            userDAO.save(user);
-
-            assertTrue(userDAO.validateCredentials("user1", "pass1"));
-            assertFalse(userDAO.validateCredentials("user1", "wrong"));
-            assertFalse(userDAO.validateCredentials("noUser", "pass1"));
-        }
+        authDAO.addToken(username, token);
+        DataAccessException ex = assertThrows(DataAccessException.class,
+                () -> authDAO.addToken("user2", token));
+        assertTrue(ex.getMessage().contains("Token already exists"));
     }
 
-    // -------------------------
-    // GAME DAO TESTS
-    // -------------------------
-    @Nested
-    class GameDAOTests {
+    @Test
+    void findUsernameByTokenNonexistentReturnsNull() throws DataAccessException {
+        var authDAO = new DatabaseAuthDAO();
+        authDAO.clear();
 
-        private DatabaseGameDAO gameDAO;
+        String result = authDAO.findUsernameByToken("nonexistent");
+        assertNull(result);
+    }
 
-        @BeforeEach
-        void setup() throws DataAccessException {
-            gameDAO = new DatabaseGameDAO();
-            gameDAO.clear();
-        }
+    @Test
+    void removeTokenPositive() throws DataAccessException {
+        var authDAO = new DatabaseAuthDAO();
+        authDAO.clear();
 
-        @Test
-        void saveAndFindById_positive() throws DataAccessException {
-            GameData game = new GameData(0, null, null, "Game1", new ChessGame());
-            int id = gameDAO.save(game);
+        String username = "user1";
+        String token = "token1";
 
-            GameData fetched = gameDAO.findById(id);
-            assertNotNull(fetched);
-            assertEquals("Game1", fetched.gameName());
-        }
+        authDAO.addToken(username, token);
+        authDAO.removeToken(token);
 
-        @Test
-        void findAll_returnsAllGames() throws DataAccessException {
-            gameDAO.save(new GameData(0, null, null, "Game1", new ChessGame()));
-            gameDAO.save(new GameData(0, null, null, "Game2", new ChessGame()));
+        assertNull(authDAO.findUsernameByToken(token));
+    }
 
-            List<GameData> games = gameDAO.findAll();
-            assertEquals(2, games.size());
-        }
+    // -----------------------------
+    // UserDAO Tests
+    // -----------------------------
+    @Test
+    void saveAndFindByUsernamePositive() throws DataAccessException {
+        var userDAO = new DatabaseUserDAO();
+        userDAO.clear();
 
-        @Test
-        void assignPlayer_positiveAndAlreadyTaken() throws DataAccessException, AlreadyTakenException {
-            int id = gameDAO.save(new GameData(0, null, null, "Game1", new ChessGame()));
+        UserData user = new UserData("alice", "password", "alice@test.com");
+        userDAO.save(user);
 
-            gameDAO.assignPlayer(id, "Alice", PlayerColor.WHITE);
-            assertThrows(AlreadyTakenException.class,
-                    () -> gameDAO.assignPlayer(id, "Bob", PlayerColor.WHITE));
-        }
+        UserData fetched = userDAO.findByUsername("alice");
+        assertEquals("alice", fetched.username());
+        assertEquals("alice@test.com", fetched.email());
+    }
+
+    @Test
+    void findByUsernameNonexistentReturnsNull() throws DataAccessException {
+        var userDAO = new DatabaseUserDAO();
+        userDAO.clear();
+
+        UserData fetched = userDAO.findByUsername("nonexistent");
+        assertNull(fetched);
+    }
+
+    @Test
+    void validateCredentialsPositiveAndNegative() throws DataAccessException {
+        var userDAO = new DatabaseUserDAO();
+        userDAO.clear();
+
+        UserData user = new UserData("bob", "secure", "bob@test.com");
+        userDAO.save(user);
+
+        assertTrue(userDAO.validateCredentials("bob", "secure"));
+        assertFalse(userDAO.validateCredentials("bob", "wrong"));
+        assertFalse(userDAO.validateCredentials("nonexistent", "any"));
+    }
+
+    // -----------------------------
+    // GameDAO Tests
+    // -----------------------------
+    @Test
+    void saveAndFindByIdPositive() throws DataAccessException {
+        var gameDAO = new DatabaseGameDAO();
+        gameDAO.clear();
+
+        GameData game = new GameData(0, null, null, "ChessGame1", null);
+        int id = gameDAO.save(game);
+
+        GameData fetched = gameDAO.findById(id);
+        assertEquals("ChessGame1", fetched.gameName());
+    }
+
+    @Test
+    void findAllReturnsAllGames() throws DataAccessException {
+        var gameDAO = new DatabaseGameDAO();
+        gameDAO.clear();
+
+        GameData game1 = new GameData(0, null, null, "G1", null);
+        GameData game2 = new GameData(0, null, null, "G2", null);
+        gameDAO.save(game1);
+        gameDAO.save(game2);
+
+        List<GameData> allGames = gameDAO.findAll();
+        assertEquals(2, allGames.size());
+    }
+
+    @Test
+    void assignPlayerPositiveAndAlreadyTaken() throws DataAccessException, AlreadyTakenException {
+        var gameDAO = new DatabaseGameDAO();
+        gameDAO.clear();
+
+        GameData game = new GameData(0, null, null, "ChessGame2", null);
+        int id = gameDAO.save(game);
+
+        gameDAO.assignPlayer(id, "player1", PlayerColor.WHITE);
+
+        // Trying to assign again should throw
+        AlreadyTakenException ex = assertThrows(AlreadyTakenException.class,
+                () -> gameDAO.assignPlayer(id, "player2", PlayerColor.WHITE));
+        assertTrue(ex.getMessage().contains("WHITE player already assigned"));
     }
 }

@@ -14,7 +14,7 @@ import java.util.List;
 
 public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
 
-    private static final Gson gson = new Gson();
+    private static final Gson GSON = new Gson();
 
     public DatabaseGameDAO() throws DataAccessException {
         configureDatabase();
@@ -22,7 +22,7 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
 
     @Override
     public int save(GameData game) throws DataAccessException {
-        String json = gson.toJson(game);
+        String json = GSON.toJson(game);
         return executeCommand("INSERT INTO games (name, whiteUsername, blackUsername, game) VALUES (?, ?, ?, ?)",
                 game.gameName(), null, null, json);
     }
@@ -34,7 +34,7 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
                 rs.getString("whiteUsername"),
                 rs.getString("blackUsername"),
                 rs.getString("name"),
-                gson.fromJson(rs.getString("game"), ChessGame.class)
+                GSON.fromJson(rs.getString("game"), ChessGame.class)
         ), gameId);
     }
 
@@ -50,7 +50,7 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
                         rs.getString("whiteUsername"),
                         rs.getString("blackUsername"),
                         rs.getString("name"),
-                        gson.fromJson(rs.getString("game"), ChessGame.class)
+                        GSON.fromJson(rs.getString("game"), ChessGame.class)
                 ));
             }
         } catch (Exception e) {
@@ -73,7 +73,10 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
         }
 
         int rows = executeCommand(sql, username, gameId);
-        if (rows == 0) throw new AlreadyTakenException("Error: " + color + " player already assigned");
+        if (rows == 0)
+        {
+            throw new AlreadyTakenException("Error: " + color + " player already assigned");
+        }
     }
 
     @Override
