@@ -154,21 +154,28 @@ public class ChessClient
                     return;
                 }
 
-                int index = Integer.parseInt(parts[1]) - 1;
-                String color = parts[2].toUpperCase();
-
-                if (!validIndex(index))
+                try
                 {
-                    return;
+                    int index = Integer.parseInt(parts[1]) - 1;
+                    String color = parts[2].toUpperCase();
+
+                    if (!validIndex(index))
+                    {
+                        return;
+                    }
+
+                    int gameID = lastGameList.get(index).gameID();
+                    game = lastGameList.get(index).game();
+                    server.joinGame(auth.authToken(), gameID, color);
+
+                    System.out.println("Joined game as " + color);
+                    drawBoard(color.equals("BLACK"));
+                    loginState = "In Game";
                 }
-
-                int gameID = lastGameList.get(index).gameID();
-                game = lastGameList.get(index).game();
-                server.joinGame(auth.authToken(), gameID, color);
-
-                System.out.println("Joined game as " + color);
-                drawBoard(color.equals("BLACK"));
-                loginState = "In Game";
+                catch (NumberFormatException e)
+                {
+                    System.out.println("Invalid game number.");
+                }
             }
 
             case "observe" -> {
@@ -178,18 +185,24 @@ public class ChessClient
                     return;
                 }
 
-                int index = Integer.parseInt(parts[1]) - 1;
-
-                if (!validIndex(index))
+                try
                 {
-                    return;
+                    int index = Integer.parseInt(parts[1]) - 1;
+
+                    if (!validIndex(index))
+                    {
+                        return;
+                    }
+
+                    game = lastGameList.get(index).game();
+
+                    System.out.println("Observing game");
+                    drawBoard(false);
                 }
-
-                game = lastGameList.get(index).game();
-
-                System.out.println("Observing game");
-                drawBoard(false);
-//                loginState = "Observing Game";
+                catch (NumberFormatException e)
+                {
+                    System.out.println("Invalid game number.");
+                }
             }
 
             case "quit" -> {
