@@ -2,120 +2,238 @@ package ui;
 
 import java.util.*;
 
+import chess.ChessGame;
+import exception.ResponseException;
+import model.AuthData;
+import model.GameData;
+import client.ServerFacade;
+
 
 
 
 public class ChessClient
 {
 
-    Scanner scanner = new Scanner(System.in);
-    int[] state = {0,0};
+    private final ServerFacade server;
+    private final Scanner scanner = new Scanner(System.in);
+    private ChessGame game;
 
-    public void start()
+    private AuthData auth = null;
+    private List<GameData> lastGameList = new ArrayList<>();
+
+    public ChessClient(ServerFacade server)
     {
-        System.out.println("Welcome to 240 chess. Type help to begin.");
+        this.server = server;
+    }
 
-        var input = "";
-        while (!input.equals("quit"))
+    public void run()
+    {
+        System.out.println("Welcome to Chess!");
+
+        while (true)
         {
-            prompt();
-            input = scanner.nextLine().toLowerCase();
-
-            switch(input)
+            try
             {
-                case "help":
-                    System.out.println(help());
-                    break;
+                System.out.print("\n> ");
+                String input = scanner.nextLine().trim();
+                if (input.isEmpty()) continue;
 
-                case "register":
-                    if(state[0] == 0)
-                    {
-                        register();
-                    }
-                    else
-                    {
-                        invalid();
-                    }
-                    break;
-                case "logout":
-                    if(state[0] == 0)
-                    {
-                        logout();
-                    }
-                    else
-                    {
-                        invalid();
-                    }
-                    break;
-                case "quit":
-                    break;
+                if (auth == null)
+                {
+                    handlePrelogin(input);
+                }
+                else
+                {
+                    handlePostlogin(input);
+                }
+            }
+            catch (Exception e)
+            {
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }
 
-    public void register()
-    {
-        System.out.println("Please enter your username");
-        prompt();
-        String username = scanner.nextLine();
-        System.out.println("Please enter your password");
-        prompt();
-        String password = scanner.nextLine();
-        System.out.println("Please enter your email");
-        prompt();
-        String email = scanner.nextLine();
 
-        try
+
+    private void handlePrelogin(String input) throws ResponseException
+    {
+        String[] parts = input.split(" ");
+
+        switch (parts[0].toLowerCase())
         {
-            //call to server to register. If successful
-            state[0] = 1;
-            System.out.println("Successfully registered");
-        }
-        catch (Exception e)
-        {
-            System.out.println("Invalid username or password. Please try again.");
+            case "help" -> help();
+
+            case "quit" -> {
+                System.out.println("Goodbye!");
+                System.exit(0);
+            }
+
+            case "login" -> {
+                if (parts.length < 3)
+                {
+                    System.out.println("Usage: login <username> <password>");
+                    return;
+                }
+
+                auth = server.login(parts[1], parts[2]);
+                System.out.println("Logged in as " + auth.username());
+            }
+
+            case "register" -> {
+                if (parts.length < 4)
+                {
+                    System.out.println("Usage: register <username> <password> <email>");
+                    return;
+                }
+
+                auth = server.register(parts[1], parts[2], parts[3]);
+                System.out.println("Registered and logged in as " + auth.username());
+            }
+
+            default -> System.out.println("Unknown command. Type 'help'.");
         }
     }
 
-    public void logout()
+
+    private void handlePostlogin(String input) throws ResponseException
     {
-        try
+        String[] parts = input.split(" ");
+
+        switch (parts[0].toLowerCase())
         {
-            //server logout call
-            state[0] = 0;
-            System.out.println("Successfully logged out");
+            case "help" -> help();
+
+            case "logout" -> {
+                server.logout(auth.authToken());
+                auth = null;
+                System.out.println("Logged out.");
+            }
+
+            case "create" -> {
+                if (parts.length < 2)
+                {
+                    System.out.println("Usage: create <gameName>");
+                    return;
+                }
+
+                String name = input.substring(input.indexOf(" ") + 1);
+                int id = server.createGame(auth.authToken(), name);
+                System.out.println("Created game with ID: " + id);
+            }
+
+            case "list" -> {
+                GameData[] games = server.listGames(auth.authToken());
+                lastGameList = Arrays.asList(games);
+
+                if (games.length == 0)
+                {
+                    System.out.println("No games available.");
+                    return;
+                }
+
+                for (int i = 0; i < games.length; i++)
+                {
+                    var g = games[i];
+                    System.out.printf("%d. %s (White: %s, Black: %s)%n",
+                            i + 1,
+                            g.gameName(),
+                            g.whiteUsername(),
+                            g.blackUsername());
+                }
+            }
+
+            case "play" -> {
+                if (parts.length < 3)
+                {
+                    System.out.println("Usage: play <number> <WHITE|BLACK>");
+                    return;
+                }
+
+                int index = Integer.parseInt(parts[1]) - 1;
+                String color = parts[2].toUpperCase();
+
+                if (!validIndex(index))
+                {
+                    return;
+                }
+
+                int gameID = lastGameList.get(index).gameID();
+                game = lastGameList.get(index).game();
+                server.joinGame(auth.authToken(), gameID, color);
+
+                System.out.println("Joined game as " + color);
+                drawBoard(color.equals("BLACK"));
+            }
+
+            case "observe" -> {
+                if (parts.length < 2)
+                {
+                    System.out.println("Usage: observe <number>");
+                    return;
+                }
+
+                int index = Integer.parseInt(parts[1]) - 1;
+
+                if (!validIndex(index)) return;
+
+                int gameID = lastGameList.get(index).gameID();
+                server.joinGame(auth.authToken(), gameID, null);
+
+                System.out.println("Observing game");
+                drawBoard(false); // observers see white perspective
+            }
+
+            case "quit" -> {
+                System.out.println("Goodbye!");
+                System.exit(0);
+            }
+
+            default -> System.out.println("Unknown command. Type 'help'.");
         }
-        catch (Exception e)
+    }
+
+    private boolean validIndex(int index)
+    {
+        if (index < 0 || index >= lastGameList.size())
         {
-            System.out.println("Something failed while logging out. Please check your connection and try again.");
+            System.out.println("Invalid game number.");
+            return false;
         }
+        return true;
     }
 
-
-    public String help()
+    private void help()
     {
-        if(state[0] == 0)
+        if (auth == null)
         {
-            return """
-                    register -  register a new user
-                    login - login an existing user
-                    quit - to quit the program
-                    help - see possible commands
-                    """;
+            System.out.println("""
+                Commands:
+                  help
+                  login <username> <password>
+                  register <username> <password> <email>
+                  quit
+                """);
         }
-        return "";
+        else
+        {
+            System.out.println("""
+                Commands:
+                  help
+                  create <gameName>
+                  list
+                  play <number> <WHITE|BLACK>
+                  observe <number>
+                  logout
+                  quit
+                """);
+        }
     }
 
-    public void prompt()
+    private void drawBoard(boolean blackPerspective)
     {
-        System.out.print(EscapeSequences.RESET_TEXT_COLOR + ">>> " + EscapeSequences.SET_TEXT_COLOR_BLUE);
+        ChessBoardPrinter printer = new ChessBoardPrinter(game);
+        printer.printBoard(blackPerspective);
     }
-
-    public void invalid()
-    {
-        System.out.println("Invalid command. Type \"help\" to see valid commands");
-    }
-
-
-
 }
+

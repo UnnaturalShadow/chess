@@ -9,7 +9,7 @@ public class ClientMain {
         ServerFacade facade = new ServerFacade(8080);
         System.out.println("Success!");
         ChessClient chessClient = new ChessClient(facade);
-        chessClient.start();
+        chessClient.run();
 
 
     }
