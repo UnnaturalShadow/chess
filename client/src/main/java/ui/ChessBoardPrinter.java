@@ -23,7 +23,12 @@ public class ChessBoardPrinter
                 ? new String[]{"h","g","f","e","d","c","b","a"}
                 : new String[]{"a","b","c","d","e","f","g","h"};
 
-        System.out.println(border + "                              " + reset);
+        System.out.print(border + "   ");
+        for (String c : cols)
+        {
+            System.out.print(" " + c + " ");
+        }
+        System.out.println("   " + reset);
 
         for (int r = 0; r < 8; r++)
         {
