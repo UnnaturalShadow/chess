@@ -32,7 +32,7 @@ public class ChessClient
         {
             try
             {
-                System.out.print("\n" + loginState + ">>> ");
+                System.out.print("\n" + EscapeSequences.SET_TEXT_COLOR_BLUE + loginState + EscapeSequences.RESET_TEXT_COLOR + ">>> ");
                 String input = scanner.nextLine().trim();
                 if (input.isEmpty())
                 {
