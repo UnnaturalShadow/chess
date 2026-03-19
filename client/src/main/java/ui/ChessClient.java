@@ -30,9 +30,15 @@ public class ChessClient {
                 System.out.print("\n" + EscapeSequences.SET_TEXT_COLOR_BLUE + loginState
                         + EscapeSequences.RESET_TEXT_COLOR + ">>> ");
                 String input = scanner.nextLine().trim();
-                if (input.isEmpty()) continue;
+                if (input.isEmpty())
+                {
+                    continue;
+                }
 
-                if (auth == null) handlePrelogin(input);
+                if (auth == null)
+                {
+                    handlePrelogin(input);
+                }
                 else handlePostlogin(input);
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
@@ -146,7 +152,11 @@ public class ChessClient {
             int index = Integer.parseInt(parts[1]) - 1;
             String color = parts[2].toUpperCase();
 
-            if (!validIndex(index)) return;
+            if (!validIndex(index))
+            {
+                return;
+            }
+
 
             int gameID = lastGameList.get(index).gameID();
             game = lastGameList.get(index).game();
@@ -168,7 +178,10 @@ public class ChessClient {
 
         try {
             int index = Integer.parseInt(parts[1]) - 1;
-            if (!validIndex(index)) return;
+            if (!validIndex(index))
+            {
+                return;
+            }
 
             game = lastGameList.get(index).game();
             System.out.println("Observing game");
