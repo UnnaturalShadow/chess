@@ -1,4 +1,4 @@
-package webSocketMessage;
+package websocketmessage;
 
 import com.google.gson.Gson;
 

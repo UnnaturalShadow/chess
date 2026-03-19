@@ -34,7 +34,10 @@ public class ChessClient
             {
                 System.out.print("\n" + loginState + ">>> ");
                 String input = scanner.nextLine().trim();
-                if (input.isEmpty()) continue;
+                if (input.isEmpty())
+                {
+                    continue;
+                }
 
                 if (auth == null)
                 {
@@ -177,7 +180,10 @@ public class ChessClient
 
                 int index = Integer.parseInt(parts[1]) - 1;
 
-                if (!validIndex(index)) return;
+                if (!validIndex(index))
+                {
+                    return;
+                }
 
                 game = lastGameList.get(index).game();
 
