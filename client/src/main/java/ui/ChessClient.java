@@ -34,7 +34,17 @@ public class ChessClient
                     }
                     else
                     {
-                        System.out.println("Invalid command. Type \"help\" to see valid commands");
+                        invalid();
+                    }
+                    break;
+                case "logout":
+                    if(state[0] == 0)
+                    {
+                        logout();
+                    }
+                    else
+                    {
+                        invalid();
                     }
                     break;
                 case "quit":
@@ -67,9 +77,24 @@ public class ChessClient
         }
     }
 
+    public void logout()
+    {
+        try
+        {
+            //server logout call
+            state[0] = 0;
+            System.out.println("Successfully logged out");
+        }
+        catch (Exception e)
+        {
+            System.out.println("Something failed while logging out. Please check your connection and try again.");
+        }
+    }
+
+
     public String help()
     {
-        if(state[0] == 1)
+        if(state[0] == 0)
         {
             return """
                     register -  register a new user
@@ -85,6 +110,12 @@ public class ChessClient
     {
         System.out.print(EscapeSequences.RESET_TEXT_COLOR + ">>> " + EscapeSequences.SET_TEXT_COLOR_BLUE);
     }
+
+    public void invalid()
+    {
+        System.out.println("Invalid command. Type \"help\" to see valid commands");
+    }
+
 
 
 }
