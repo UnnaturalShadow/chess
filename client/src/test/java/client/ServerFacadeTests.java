@@ -10,6 +10,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ServerFacadeTests {
 
+    @BeforeEach
+    public void clearDB() throws Exception {
+        facade.clear();
+    }
+
     private static Server server;
     private static ServerFacade facade;
 

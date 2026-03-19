@@ -8,11 +8,9 @@ import model.AuthData;
 import model.GameData;
 import client.ServerFacade;
 
-
-
-
 public class ChessClient
 {
+    private String loginState = "Logged Out";
 
     private final ServerFacade server;
     private final Scanner scanner = new Scanner(System.in);
@@ -34,7 +32,7 @@ public class ChessClient
         {
             try
             {
-                System.out.print("\n> ");
+                System.out.print("\n" + loginState + ">>> ");
                 String input = scanner.nextLine().trim();
                 if (input.isEmpty()) continue;
 
@@ -78,6 +76,7 @@ public class ChessClient
 
                 auth = server.login(parts[1], parts[2]);
                 System.out.println("Logged in as " + auth.username());
+                loginState = "Logged In";
             }
 
             case "register" -> {
@@ -89,6 +88,7 @@ public class ChessClient
 
                 auth = server.register(parts[1], parts[2], parts[3]);
                 System.out.println("Registered and logged in as " + auth.username());
+                loginState = "Logged In";
             }
 
             default -> System.out.println("Unknown command. Type 'help'.");
@@ -108,6 +108,7 @@ public class ChessClient
                 server.logout(auth.authToken());
                 auth = null;
                 System.out.println("Logged out.");
+                loginState = "Logged Out";
             }
 
             case "create" -> {
@@ -143,10 +144,10 @@ public class ChessClient
                 }
             }
 
-            case "play" -> {
+            case "join" -> {
                 if (parts.length < 3)
                 {
-                    System.out.println("Usage: play <number> <WHITE|BLACK>");
+                    System.out.println("Usage: join <number> <WHITE|BLACK>");
                     return;
                 }
 
@@ -164,6 +165,7 @@ public class ChessClient
 
                 System.out.println("Joined game as " + color);
                 drawBoard(color.equals("BLACK"));
+                loginState = "In Game";
             }
 
             case "observe" -> {
@@ -177,11 +179,11 @@ public class ChessClient
 
                 if (!validIndex(index)) return;
 
-                int gameID = lastGameList.get(index).gameID();
-                server.joinGame(auth.authToken(), gameID, null);
+                game = lastGameList.get(index).game();
 
                 System.out.println("Observing game");
-                drawBoard(false); // observers see white perspective
+                drawBoard(false);
+//                loginState = "Observing Game";
             }
 
             case "quit" -> {
@@ -222,7 +224,7 @@ public class ChessClient
                   help
                   create <gameName>
                   list
-                  play <number> <WHITE|BLACK>
+                  join <number> <WHITE|BLACK>
                   observe <number>
                   logout
                   quit

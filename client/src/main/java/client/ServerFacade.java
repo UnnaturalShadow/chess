@@ -144,6 +144,11 @@ public class ServerFacade
         }
     }
 
+    public void clear() throws ResponseException
+    {
+        makeRequest("DELETE", "/db", null, null, null);
+    }
+
     // =========================
     // Request/Response DTOs
     // =========================

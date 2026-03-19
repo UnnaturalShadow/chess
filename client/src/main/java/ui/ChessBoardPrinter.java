@@ -48,14 +48,14 @@ public class ChessBoardPrinter
                 if (piece == null)
                 {
                     System.out.print(light
-                            ? EscapeSequences.SET_BG_COLOR_WHITE + "   "
-                            : EscapeSequences.SET_BG_COLOR_BLUE + "   ");
+                            ? EscapeSequences.SET_BG_COLOR_BLUE + "   "
+                            : EscapeSequences.SET_BG_COLOR_WHITE + "   ");
                 }
                 else
                 {
                     System.out.print(light
-                            ? EscapeSequences.SET_BG_COLOR_WHITE + " " + letterFor(piece) + EscapeSequences.SET_BG_COLOR_WHITE + " "
-                            : EscapeSequences.SET_BG_COLOR_BLUE + " " + letterFor(piece) +  EscapeSequences.SET_BG_COLOR_BLUE + " ");
+                            ? EscapeSequences.SET_BG_COLOR_BLUE + " " + letterFor(piece) + EscapeSequences.SET_BG_COLOR_BLUE + " "
+                            : EscapeSequences.SET_BG_COLOR_WHITE + " " + letterFor(piece) +  EscapeSequences.SET_BG_COLOR_WHITE + " ");
                 }
             }
 
