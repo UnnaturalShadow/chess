@@ -3,6 +3,8 @@ package ui;
 import java.util.*;
 
 import chess.ChessGame;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
@@ -44,7 +46,7 @@ public class ChessClient {
                     handlePostlogin(input);
                 }
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                System.out.println(extractErrorMessage(e.getMessage()));
             }
         }
     }
@@ -232,4 +234,26 @@ public class ChessClient {
         ChessBoardPrinter printer = new ChessBoardPrinter(game);
         printer.printBoard(blackPerspective);
     }
+
+    public static String extractErrorMessage(String rawMessage) {
+        try {
+            int jsonStart = rawMessage.indexOf('{');
+            if (jsonStart == -1) return rawMessage;
+
+            String jsonPart = rawMessage.substring(jsonStart);
+
+            JsonObject obj = JsonParser.parseString(jsonPart).getAsJsonObject();
+            String message = obj.get("message").getAsString();
+
+            if (message.startsWith("Error: ")) {
+                message = message.substring(7);
+            }
+
+            return message;
+
+        } catch (Exception e) {
+            return rawMessage;
+        }
+    }
+
 }

@@ -65,7 +65,7 @@ public class GameService {
         String username = authenticate(token);
 
         if (request == null) {
-            throw new MissingFieldException("Error: Join request cannot be null");
+            throw new MissingFieldException("Error: Join requires a game ID");
         }
 
         if (request.gameID() <= 0) {
@@ -107,6 +107,6 @@ public class GameService {
             return PlayerColor.BLACK;
         }
 
-        throw new MissingFieldException("Error: Invalid playerColor");
+        throw new MissingFieldException("Error: Invalid Color");
     }
 }
