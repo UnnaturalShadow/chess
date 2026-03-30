@@ -125,7 +125,7 @@ public class ChessClient {
         }
         String name = input.substring(input.indexOf(" ") + 1);
         int id = server.createGame(auth.authToken(), name);
-        System.out.println("Created game with ID: " + id);
+        System.out.println("Created game " + name);
     }
 
     private void listGames() throws ResponseException {
