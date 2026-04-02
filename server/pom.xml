@@ -97,6 +97,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.tyrus.bundles</groupId>
+            <artifactId>tyrus-standalone-client</artifactId>
+            <version>2.1.4</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>edu.byu.cs240</groupId>
             <artifactId>passoff-dependencies</artifactId>
             <version>1.0</version>

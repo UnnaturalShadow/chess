@@ -10,6 +10,7 @@ import model.AuthData;
 import model.GameData;
 import client.ServerFacade;
 
+
 public class ChessClient {
     private String loginState = "Logged Out";
 
