@@ -13,5 +13,17 @@
     <orderEntry type="library" name="google.code.gson" level="project" />
     <orderEntry type="library" name="junit.jupiter" level="project" />
     <orderEntry type="library" name="io.javalin" level="project" />
+    <orderEntry type="module-library">
+      <library name="glassfish.tyrus.bundles.standalone.client" type="repository">
+        <properties maven-id="org.glassfish.tyrus.bundles:tyrus-standalone-client:2.1.4" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../lib/tyrus-standalone-client-2.1.4.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../lib/tyrus-standalone-client-2.1.4-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>

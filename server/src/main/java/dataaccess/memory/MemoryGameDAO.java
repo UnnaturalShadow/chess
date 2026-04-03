@@ -2,6 +2,7 @@ package dataaccess.memory;
 
 import dataaccess.exceptions.AlreadyTakenException;
 import dataaccess.GameDAO;
+import dataaccess.exceptions.DataAccessException;
 import model.GameData;
 import model.PlayerColor;
 
@@ -83,6 +84,12 @@ public class MemoryGameDAO implements GameDAO
         }
 
         games.put(gameId, updated);
+    }
+
+    @Override
+    public void update(GameData game) throws DataAccessException
+    {
+        return;
     }
 
     @Override
