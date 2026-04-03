@@ -64,5 +64,23 @@ public class ChessPosition
     {
         return "Postion: (" + row + ", " + col + ")";
     }
+
+    public static ChessPosition fromAlgebraic(String algebraic) {
+        if (algebraic == null || algebraic.length() != 2) {
+            throw new IllegalArgumentException("Invalid algebraic position: " + algebraic);
+        }
+
+        char fileChar = algebraic.charAt(0);
+        char rankChar = algebraic.charAt(1);
+
+        int col = fileChar - 'a' + 1;  // 'a' -> 1, 'b' -> 2, ..., 'h' -> 8
+        int row = rankChar - '1' + 1;  // '1' -> 1, '2' -> 2, ..., '8' -> 8
+
+        if (col < 1 || col > 8 || row < 1 || row > 8) {
+            throw new IllegalArgumentException("Invalid algebraic position: " + algebraic);
+        }
+
+        return new ChessPosition(row, col);
+    }
 }
 

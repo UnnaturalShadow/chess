@@ -79,6 +79,24 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
         }
     }
 
+    // ✅ NEW METHOD (CRITICAL FOR GAMEPLAY)
+    @Override
+    public void update(GameData game) throws DataAccessException {
+        String json = GSON.toJson(game.game());
+
+        int rows = executeCommand(
+                "UPDATE games SET whiteUsername = ?, blackUsername = ?, game = ? WHERE idgames = ?",
+                game.whiteUsername(),
+                game.blackUsername(),
+                json,
+                game.gameID()
+        );
+
+        if (rows == 0) {
+            throw new DataAccessException("Error: Failed to update game");
+        }
+    }
+
     @Override
     public void clear() throws DataAccessException {
         executeCommand("TRUNCATE TABLE games");

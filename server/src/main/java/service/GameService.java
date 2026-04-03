@@ -8,6 +8,8 @@ import model.PlayerColor;
 import requests.CreateRequest;
 import requests.JoinRequest;
 import chess.ChessGame;
+import chess.ChessMove;
+import exception.InvalidMoveException;
 
 import java.util.List;
 
@@ -79,8 +81,65 @@ public class GameService {
 
         PlayerColor color = parseColor(request.playerColor());
 
-        // Assign player (DAO handles occupancy check)
         gameDAO.assignPlayer(request.gameID(), username, color);
+    }
+
+    // -------------------------------------------------------
+    // MAKE MOVE (NEW - PHASE 6)
+    // -------------------------------------------------------
+    public GameData makeMove(String token, int gameID, ChessMove move)
+            throws InvalidCredentialsException,
+            GameNotFoundException,
+            DataAccessException,
+            InvalidMoveException {
+
+        String username = authenticate(token);
+
+        GameData gameData = gameDAO.findById(gameID);
+        if (gameData == null) {
+            throw new GameNotFoundException("Error: Game not found");
+        }
+
+        ChessGame game = gameData.game();
+        if (game == null) {
+            throw new InvalidMoveException("Error: Game state missing");
+        }
+
+        // Determine player color
+        PlayerColor playerColor = null;
+        if (username.equals(gameData.whiteUsername())) {
+            playerColor = PlayerColor.WHITE;
+        } else if (username.equals(gameData.blackUsername())) {
+            playerColor = PlayerColor.BLACK;
+        } else {
+            throw new InvalidMoveException("Error: Observers cannot make moves");
+        }
+
+        // Check turn
+        if (!game.getTeamTurn().equals(playerColor))
+        {
+            throw new InvalidMoveException("Error: Not your turn");
+        }
+
+        // Attempt move (ChessGame should validate legality)
+        try {
+            game.makeMove(move);
+        } catch (Exception e) {
+            throw new InvalidMoveException("Error: Invalid move");
+        }
+
+        // Save updated game
+        GameData updated = new GameData(
+                gameData.gameID(),
+                gameData.whiteUsername(),
+                gameData.blackUsername(),
+                gameData.gameName(),
+                game
+        );
+
+        gameDAO.update(updated);
+
+        return updated;
     }
 
     // -------------------------------------------------------

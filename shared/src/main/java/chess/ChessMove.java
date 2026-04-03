@@ -76,5 +76,28 @@ public class ChessMove
     {
         return "["+start.toString()+", "+end.toString()+"]";
     }
+
+    public static ChessMove fromString(String moveStr) {
+        if (moveStr == null || (moveStr.length() != 4 && moveStr.length() != 5)) {
+            throw new IllegalArgumentException("Invalid move format: " + moveStr);
+        }
+
+        ChessPosition start = ChessPosition.fromAlgebraic(moveStr.substring(0, 2));
+        ChessPosition end = ChessPosition.fromAlgebraic(moveStr.substring(2, 4));
+
+        ChessPiece.PieceType promote = null;
+        if (moveStr.length() == 5) {
+            char promoChar = moveStr.charAt(4);
+            switch (Character.toUpperCase(promoChar)) {
+                case 'Q' -> promote = ChessPiece.PieceType.QUEEN;
+                case 'R' -> promote = ChessPiece.PieceType.ROOK;
+                case 'B' -> promote = ChessPiece.PieceType.BISHOP;
+                case 'N' -> promote = ChessPiece.PieceType.KNIGHT;
+                default -> throw new IllegalArgumentException("Invalid promotion piece: " + promoChar);
+            }
+        }
+
+        return new ChessMove(start, end, promote);
+    }
 }
 
