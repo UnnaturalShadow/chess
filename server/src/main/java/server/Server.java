@@ -19,6 +19,9 @@ import service.UserService;
 import websocket.WebSocketManager;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
+import websocket.messages.ErrorMessage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -126,7 +129,7 @@ public class Server {
             switch (command.getCommandType()) {
                 case CONNECT -> handleConnect(ctx, command);
                 case MAKE_MOVE -> {
-                    // TODO (next step)
+                    // TODO
                 }
                 case LEAVE -> {
                     // TODO
@@ -155,14 +158,14 @@ public class Server {
             WebSocketManager.addSession(cmd.getGameID(), ctx.session);
 
             // Send LOAD_GAME to this client
-            ServerMessage loadMsg = ServerMessage.loadGame(game);
+            ServerMessage loadMsg = new LoadGameMessage(game);
             ctx.send(gson.toJson(loadMsg));
 
             // Notify others
-            String username = auth.username;
+            String username = auth; // FIXED
             String message = username + " joined the game";
 
-            broadcast(cmd.getGameID(), ServerMessage.notification(message), ctx.session);
+            broadcast(cmd.getGameID(), new NotificationMessage(message), ctx.session);
 
         } catch (Exception e) {
             sendError(ctx, "Error: " + e.getMessage());
@@ -183,7 +186,7 @@ public class Server {
     }
 
     private void sendError(io.javalin.websocket.WsContext ctx, String msg) {
-        ServerMessage error = ServerMessage.error(msg);
+        ServerMessage error = new ErrorMessage(msg);
         ctx.send(gson.toJson(error));
     }
 
