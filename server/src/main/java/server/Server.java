@@ -12,9 +12,13 @@ import handlers.AuthHandler;
 import handlers.GameHandler;
 import handlers.UserHandler;
 import io.javalin.Javalin;
+import org.eclipse.jetty.websocket.api.Session;
 import service.AuthService;
 import service.GameService;
 import service.UserService;
+import websocket.WebSocketManager;
+import websocket.commands.UserGameCommand;
+import websocket.messages.ServerMessage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +41,7 @@ public class Server {
     private GameHandler gameHandler;
 
     private final Javalin app;
+    private final Gson gson = new Gson();
 
     public Server() {
 
@@ -60,7 +65,7 @@ public class Server {
 
         app = Javalin.create(config -> config.staticFiles.add("/web"));
 
-        // --- Routes ---
+        // --- REST Routes ---
         app.delete("/db", ctx -> {
             try {
                 userDAO.clear();
@@ -80,6 +85,27 @@ public class Server {
         app.post("/game", gameHandler::create);
         app.get("/game", gameHandler::list);
         app.put("/game", gameHandler::join);
+
+        // --- WebSocket Endpoint ---
+        app.ws("/ws", ws -> {
+
+            ws.onConnect(ctx -> {
+                System.out.println("WebSocket connected: " + ctx.sessionId());
+            });
+
+            ws.onMessage(ctx -> {
+                handleWebSocketMessage(ctx, ctx.message());
+            });
+
+            ws.onClose(ctx -> {
+                System.out.println("WebSocket disconnected: " + ctx.sessionId());
+                WebSocketManager.removeSession(ctx.session);
+            });
+
+            ws.onError(ctx -> {
+                System.out.println("WebSocket error: " + ctx.error());
+            });
+        });
     }
 
     public int run(int desiredPort) {
@@ -91,7 +117,78 @@ public class Server {
         app.stop();
     }
 
+    // --- WebSocket Logic ---
+
+    private void handleWebSocketMessage(io.javalin.websocket.WsContext ctx, String messageJson) {
+        try {
+            UserGameCommand command = gson.fromJson(messageJson, UserGameCommand.class);
+
+            switch (command.getCommandType()) {
+                case CONNECT -> handleConnect(ctx, command);
+                case MAKE_MOVE -> {
+                    // TODO (next step)
+                }
+                case LEAVE -> {
+                    // TODO
+                }
+                case RESIGN -> {
+                    // TODO
+                }
+            }
+
+        } catch (Exception e) {
+            sendError(ctx, "Error: Invalid command");
+        }
+    }
+
+    private void handleConnect(io.javalin.websocket.WsContext ctx, UserGameCommand cmd) {
+        try {
+            var auth = authDAO.findUsernameByToken(cmd.getAuthToken());
+            var game = gameDAO.findById(cmd.getGameID());
+
+            if (auth == null || game == null) {
+                sendError(ctx, "Error: invalid auth or game");
+                return;
+            }
+
+            // Track session
+            WebSocketManager.addSession(cmd.getGameID(), ctx.session);
+
+            // Send LOAD_GAME to this client
+            ServerMessage loadMsg = ServerMessage.loadGame(game);
+            ctx.send(gson.toJson(loadMsg));
+
+            // Notify others
+            String username = auth.username;
+            String message = username + " joined the game";
+
+            broadcast(cmd.getGameID(), ServerMessage.notification(message), ctx.session);
+
+        } catch (Exception e) {
+            sendError(ctx, "Error: " + e.getMessage());
+        }
+    }
+
+    private void broadcast(int gameID, ServerMessage message, Session exclude) {
+        String json = gson.toJson(message);
+
+        for (Session s : WebSocketManager.getSessions(gameID)) {
+            if (s.isOpen() && s != exclude) {
+                try {
+                    s.getRemote().sendString(json);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    private void sendError(io.javalin.websocket.WsContext ctx, String msg) {
+        ServerMessage error = ServerMessage.error(msg);
+        ctx.send(gson.toJson(error));
+    }
+
     // --- Helper methods for JSON responses ---
+
     public static String buildJson(Object... keysAndVals) {
         Map<String, Object> pairs = new HashMap<>();
         for (int i = 1; i < keysAndVals.length; i++) {
