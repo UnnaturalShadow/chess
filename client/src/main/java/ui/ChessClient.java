@@ -4,7 +4,6 @@ import java.net.URI;
 import java.util.*;
 
 import chess.ChessGame;
-import chess.ChessMove;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -159,13 +158,16 @@ public class ChessClient {
             currentGameData = lastGameList.get(index);
             game = currentGameData.game();
 
+            // Join the server-side game first
             server.joinGame(auth.authToken(), currentGameData.gameID(), color);
 
+            // Open websocket and wait for LOAD_GAME before allowing moves
             openWebSocket(currentGameData.gameID());
             sendConnectMessage();
 
             System.out.println("Joined game as " + color);
             loginState = "In Game";
+
         } catch (NumberFormatException e) {
             System.out.println("Invalid game number.");
         }
@@ -183,11 +185,13 @@ public class ChessClient {
             currentGameData = lastGameList.get(index);
             game = currentGameData.game();
 
+            // Open websocket and send CONNECT
             openWebSocket(currentGameData.gameID());
             sendConnectMessage();
 
             System.out.println("Observing game");
             loginState = "Observing";
+
         } catch (NumberFormatException e) {
             System.out.println("Invalid game number.");
         }
@@ -222,10 +226,10 @@ public class ChessClient {
             ServerMessage msg = gson.fromJson(messageJson, ServerMessage.class);
             switch (msg.getServerMessageType()) {
                 case LOAD_GAME -> {
+                    // Only update the game once the server confirms LOAD_GAME
                     currentGameData = gson.fromJson(messageJson, GameData.class);
                     game = currentGameData.game();
                     drawBoard(false);
-                    System.out.println("Board updated.");
                 }
                 case NOTIFICATION -> {
                     JsonObject obj = JsonParser.parseString(messageJson).getAsJsonObject();
@@ -249,11 +253,13 @@ public class ChessClient {
             System.out.println("Usage: move <from><to> (e.g., e2e4)");
             return;
         }
+
         if (currentGameData == null || wsClient == null) {
-            System.out.println("You are not in a game.");
+            System.out.println("You are not in a game or waiting for LOAD_GAME.");
             return;
         }
 
+        // Send the algebraic move directly; server expects string format
         String moveStr = parts[1];
         try {
             UserGameCommand moveCmd = new UserGameCommand(
@@ -286,6 +292,17 @@ public class ChessClient {
                       help
                       login <username> <password>
                       register <username> <password> <email>
+                      quit
+                    """);
+        } else if (loginState.equals("In Game")) {
+            System.out.println("""
+                    Commands:
+                      help
+                      move <from><to>
+                      list
+                      join <number> <WHITE|BLACK>
+                      observe <number>
+                      logout
                       quit
                     """);
         } else {
