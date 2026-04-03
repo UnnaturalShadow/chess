@@ -67,6 +67,20 @@ public class ServerFacade
     }
 
     // =========================
+    // Gameplay Methods
+    // =========================
+
+    public boolean makeMove(String authToken, int gameID, String move) throws ResponseException {
+        var body = new MakeMoveRequest(move);
+        var response = makeRequest("POST", "/game/" + gameID + "/move", body, authToken, MakeMoveResponse.class);
+        return response.success();
+    }
+
+    public GameData getGame(int gameID) throws ResponseException {
+        return makeRequest("GET", "/game/" + gameID, null, null, GameData.class);
+    }
+
+    // =========================
     // Core HTTP Logic
     // =========================
 
@@ -90,7 +104,6 @@ public class ServerFacade
                 builder.header("Authorization", authToken);
             }
 
-            // Attach body if needed
             if (requestBody != null)
             {
                 String json = gson.toJson(requestBody);
@@ -157,8 +170,10 @@ public class ServerFacade
     private record LoginRequest(String username, String password) {}
     private record CreateGameRequest(String gameName) {}
     private record JoinGameRequest(String playerColor, int gameID) {}
+    private record MakeMoveRequest(String move) {}
 
     private record CreateGameResponse(int gameID) {}
     private record ListGamesResponse(GameData[] games) {}
+    private record MakeMoveResponse(boolean success) {}
     private record ErrorResponse(String message) {}
 }

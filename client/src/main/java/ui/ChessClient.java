@@ -10,13 +10,13 @@ import model.AuthData;
 import model.GameData;
 import client.ServerFacade;
 
-
 public class ChessClient {
     private String loginState = "Logged Out";
 
     private final ServerFacade server;
     private final Scanner scanner = new Scanner(System.in);
     private ChessGame game;
+    private GameData currentGameData;
 
     private AuthData auth = null;
     private List<GameData> lastGameList = new ArrayList<>();
@@ -107,6 +107,7 @@ public class ChessClient {
             case "list" -> listGames();
             case "join" -> joinGame(parts);
             case "observe" -> observeGame(parts);
+            case "move" -> makeMove(parts);
             case "quit" -> quit();
             default -> System.out.println("Unknown command. Type 'help'.");
         }
@@ -115,6 +116,8 @@ public class ChessClient {
     private void logout() throws ResponseException {
         server.logout(auth.authToken());
         auth = null;
+        currentGameData = null;
+        game = null;
         System.out.println("Logged out.");
         loginState = "Logged Out";
     }
@@ -163,10 +166,9 @@ public class ChessClient {
                 return;
             }
 
-
-            int gameID = lastGameList.get(index).gameID();
-            game = lastGameList.get(index).game();
-            server.joinGame(auth.authToken(), gameID, color);
+            currentGameData = lastGameList.get(index);
+            game = currentGameData.game();
+            server.joinGame(auth.authToken(), currentGameData.gameID(), color);
 
             System.out.println("Joined game as " + color);
             drawBoard(color.equals("BLACK"));
@@ -189,11 +191,44 @@ public class ChessClient {
                 return;
             }
 
-            game = lastGameList.get(index).game();
+            currentGameData = lastGameList.get(index);
+            game = currentGameData.game();
             System.out.println("Observing game");
             drawBoard(false);
         } catch (NumberFormatException e) {
             System.out.println("Invalid game number.");
+        }
+    }
+
+    // ==========================
+    // Gameplay Methods
+    // ==========================
+    private void makeMove(String[] parts) throws ResponseException {
+        if (parts.length < 2) {
+            System.out.println("Usage: move <from><to> (e.g., e2e4)");
+            return;
+        }
+
+        if (currentGameData == null) {
+            System.out.println("You are not in a game.");
+            return;
+        }
+
+        String moveStr = parts[1];
+
+        try {
+            boolean success = server.makeMove(auth.authToken(), currentGameData.gameID(), moveStr);
+            if (success) {
+                System.out.println("Move applied: " + moveStr);
+                // Refresh the game state from the server
+                currentGameData = server.getGame(currentGameData.gameID());
+                game = currentGameData.game();
+                drawBoard(auth.username().equals(currentGameData.game().getTeamTurn()));
+            } else {
+                System.out.println("Invalid move: " + moveStr);
+            }
+        } catch (Exception e) {
+            System.out.println("Error making move: " + e.getMessage());
         }
     }
 
@@ -225,6 +260,7 @@ public class ChessClient {
                       list
                       join <number> <WHITE|BLACK>
                       observe <number>
+                      move <from><to>
                       logout
                       quit
                     """);
@@ -256,5 +292,4 @@ public class ChessClient {
             return rawMessage;
         }
     }
-
 }
