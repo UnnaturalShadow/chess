@@ -1,8 +1,12 @@
 package client.websocket;
 
-import websocketmessage.Notification;
+import chess.ChessGame;
 
-public interface NotificationHandler
-{
-    void notify(Notification notification);
+public interface NotificationHandler {
+
+    void loadGame(ChessGame game);
+
+    void notify(String message);
+
+    void error(String message);
 }

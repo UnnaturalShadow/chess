@@ -2,8 +2,9 @@ package client.websocket;
 
 import com.google.gson.Gson;
 import exception.ResponseException;
-import websocketmessage.Action;
-import websocketmessage.Notification;
+import websocket.commands.UserGameCommand;
+import websocket.commands.MakeMoveCommand;
+import websocket.messages.*;
 
 import jakarta.websocket.*;
 
@@ -11,55 +12,104 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-//need to extend Endpoint for websocket to work properly
 public class WebSocketFacade extends Endpoint {
 
-    Session session;
-    NotificationHandler notificationHandler;
+    private Session session;
+    private final NotificationHandler handler;
+    private final Gson gson = new Gson();
 
-    public WebSocketFacade(String url, NotificationHandler notificationHandler) throws ResponseException {
+    public WebSocketFacade(String url, NotificationHandler handler) throws ResponseException {
         try {
             url = url.replace("http", "ws");
             URI socketURI = new URI(url + "/ws");
-            this.notificationHandler = notificationHandler;
+            this.handler = handler;
 
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
             this.session = container.connectToServer(this, socketURI);
 
-            //set message handler
-            this.session.addMessageHandler(new MessageHandler.Whole<String>() {
-                @Override
-                public void onMessage(String message) {
-                    Notification notification = new Gson().fromJson(message, Notification.class);
-                    notificationHandler.notify(notification);
-                }
+            // Message handler
+            this.session.addMessageHandler((MessageHandler.Whole<String>) message -> {
+                handleServerMessage(message);
             });
+
         } catch (DeploymentException | IOException | URISyntaxException ex) {
             throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
         }
     }
 
-    //Endpoint requires this method, but you don't have to do anything
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
+        // nothing required
     }
 
-    public void enterPetShop(String visitorName) throws ResponseException {
+    // =========================
+    // RECEIVE (Server → Client)
+    // =========================
+
+    private void handleServerMessage(String message) {
         try {
-            var action = new Action(Action.Type.ENTER, visitorName);
-            this.session.getBasicRemote().sendText(new Gson().toJson(action));
+            ServerMessage base = gson.fromJson(message, ServerMessage.class);
+
+            switch (base.getServerMessageType()) {
+
+                case LOAD_GAME -> {
+                    LoadGameMessage msg = gson.fromJson(message, LoadGameMessage.class);
+                    handler.loadGame(msg.getGame());
+                }
+
+                case NOTIFICATION -> {
+                    NotificationMessage msg = gson.fromJson(message, NotificationMessage.class);
+                    handler.notify(msg.getMessage());
+                }
+
+                case ERROR -> {
+                    ErrorMessage msg = gson.fromJson(message, ErrorMessage.class);
+                    handler.error(msg.getErrorMessage());
+                }
+            }
+
+        } catch (Exception ex) {
+            handler.error("Error: Failed to parse server message");
+        }
+    }
+
+    // =========================
+    // SEND (Client → Server)
+    // =========================
+
+    public void connect(String authToken, int gameID) throws ResponseException {
+        try {
+            var cmd = new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
+            session.getBasicRemote().sendText(gson.toJson(cmd));
         } catch (IOException ex) {
             throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
         }
     }
 
-    public void leavePetShop(String visitorName) throws ResponseException {
+    public void makeMove(String authToken, int gameID, chess.ChessMove move) throws ResponseException {
         try {
-            var action = new Action(Action.Type.EXIT, visitorName);
-            this.session.getBasicRemote().sendText(new Gson().toJson(action));
+            var cmd = new MakeMoveCommand(authToken, gameID, move);
+            session.getBasicRemote().sendText(gson.toJson(cmd));
         } catch (IOException ex) {
             throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
         }
     }
 
+    public void leave(String authToken, int gameID) throws ResponseException {
+        try {
+            var cmd = new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID);
+            session.getBasicRemote().sendText(gson.toJson(cmd));
+        } catch (IOException ex) {
+            throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
+        }
+    }
+
+    public void resign(String authToken, int gameID) throws ResponseException {
+        try {
+            var cmd = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);
+            session.getBasicRemote().sendText(gson.toJson(cmd));
+        } catch (IOException ex) {
+            throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
+        }
+    }
 }
