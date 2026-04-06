@@ -48,23 +48,17 @@ public class UserGameCommand {
         return gameID;
     }
 
-    // NEW getter for the move string
-    public String getMove() {
-        return move;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserGameCommand that)) return false;
         return getCommandType() == that.getCommandType() &&
                 Objects.equals(getAuthToken(), that.getAuthToken()) &&
-                Objects.equals(getGameID(), that.getGameID()) &&
-                Objects.equals(getMove(), that.getMove());
+                Objects.equals(getGameID(), that.getGameID());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getCommandType(), getAuthToken(), getGameID(), getMove());
+        return Objects.hash(getCommandType(), getAuthToken(), getGameID());
     }
 }
