@@ -142,6 +142,42 @@ public class GameService {
         return updated;
     }
 
+    public void resign(String token, int gameID)
+            throws InvalidCredentialsException,
+            GameNotFoundException,
+            DataAccessException,
+            InvalidMoveException {
+
+        String username = authenticate(token);
+
+        GameData gameData = gameDAO.findById(gameID);
+        if (gameData == null) {
+            throw new GameNotFoundException("Error: Game not found");
+        }
+
+        if (gameData.gameOver()) {
+            throw new InvalidMoveException("Error: Game already over");
+        }
+
+        boolean isWhite = username.equals(gameData.whiteUsername());
+        boolean isBlack = username.equals(gameData.blackUsername());
+
+        if (!isWhite && !isBlack) {
+            throw new InvalidMoveException("Error: Observers cannot resign");
+        }
+
+        GameData updated = new GameData(
+                gameData.gameID(),
+                gameData.whiteUsername(),
+                gameData.blackUsername(),
+                gameData.gameName(),
+                gameData.game(),
+                true // gameOver = true
+        );
+
+        gameDAO.update(updated);
+    }
+
     // -------------------------------------------------------
     // HELPER METHODS
     // -------------------------------------------------------

@@ -1,10 +1,15 @@
 package server.websocket;
 
 import chess.ChessGame;
+import chess.ChessMove;
 import com.google.gson.Gson;
+import dataaccess.AuthDAO;
+import dataaccess.GameDAO;
+import dataaccess.exceptions.DataAccessException;
 import exception.ResponseException;
 import io.javalin.websocket.*;
 import org.eclipse.jetty.websocket.api.Session;
+import service.GameService;
 import websocket.commands.UserGameCommand;
 import websocket.commands.MakeMoveCommand;
 import websocket.messages.*;
@@ -15,6 +20,17 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     private final ConnectionManager connections = new ConnectionManager();
     private final Gson gson = new Gson();
+
+    // 🔥 Inject real backend
+    private final AuthDAO authDAO;
+    private final GameDAO gameDAO;
+    private final GameService gameService;
+
+    public WebSocketHandler(AuthDAO authDAO, GameDAO gameDAO, GameService gameService) {
+        this.authDAO = authDAO;
+        this.gameDAO = gameDAO;
+        this.gameService = gameService;
+    }
 
     @Override
     public void handleConnect(WsConnectContext ctx) {
@@ -27,7 +43,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         Session session = ctx.session;
 
         try {
-            // 1. Parse base command
             UserGameCommand command = gson.fromJson(ctx.message(), UserGameCommand.class);
 
             switch (command.getCommandType()) {
@@ -35,7 +50,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                 case CONNECT -> handleConnectCommand(command, session);
 
                 case MAKE_MOVE -> {
-                    // reparse into subclass
                     MakeMoveCommand moveCmd = gson.fromJson(ctx.message(), MakeMoveCommand.class);
                     handleMakeMove(moveCmd, session);
                 }
@@ -59,51 +73,89 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     // COMMAND HANDLERS
     // =========================
 
-    private void handleConnectCommand(UserGameCommand cmd, Session session) throws IOException {
-        int gameID = cmd.getGameID();
+    private void handleConnectCommand(UserGameCommand cmd, Session session) throws DataAccessException, IOException
+    {
+        var username = authDAO.findUsernameByToken(cmd.getAuthToken());
+        var gameData = gameDAO.findById(cmd.getGameID());
 
+        if (username == null || gameData == null) {
+            sendError(session, "Error: invalid auth or game");
+            return;
+        }
+
+        int gameID = cmd.getGameID();
         connections.add(gameID, session);
 
-        // 1. Send LOAD_GAME to root client
-        LoadGameMessage loadMsg = new LoadGameMessage(getGame(gameID));
+        // 1. Send game to root client
+        LoadGameMessage loadMsg = new LoadGameMessage(gameData.game());
         session.getRemote().sendString(gson.toJson(loadMsg));
 
         // 2. Notify others
-        NotificationMessage notif = new NotificationMessage("A user connected to the game");
+        String message = username + " joined the game";
+        NotificationMessage notif = new NotificationMessage(message);
         connections.broadcast(gameID, session, gson.toJson(notif));
     }
 
-    private void handleMakeMove(MakeMoveCommand cmd, Session session) throws IOException {
+    private void handleMakeMove(MakeMoveCommand cmd, Session session) throws IOException, DataAccessException
+    {
+        var username = authDAO.findUsernameByToken(cmd.getAuthToken());
+
+        if (username == null) {
+            sendError(session, "Error: invalid auth");
+            return;
+        }
+
         int gameID = cmd.getGameID();
+        ChessMove move = cmd.getMove();
 
-        // TODO: validate + update game
-        // updateGame(cmd.getMove());
+        try {
+            // 🔥 REAL GAME LOGIC
+            ChessGame updatedGame = gameService.makeMove(cmd.getAuthToken(), gameID, move).game();
 
-        // 1. Send updated game to ALL clients
-        LoadGameMessage loadMsg = new LoadGameMessage(getGame(gameID));
-        connections.broadcastAll(gameID, gson.toJson(loadMsg));
+            // 1. Broadcast updated board to ALL
+            LoadGameMessage loadMsg = new LoadGameMessage(updatedGame);
+            connections.broadcastAll(gameID, gson.toJson(loadMsg));
 
-        // 2. Notify others
-        NotificationMessage notif = new NotificationMessage("A move was made");
-        connections.broadcast(gameID, session, gson.toJson(notif));
+            // 2. Notify others
+            String message = username + " made a move";
+            NotificationMessage notif = new NotificationMessage(message);
+            connections.broadcast(gameID, session, gson.toJson(notif));
+
+        } catch (Exception e) {
+            sendError(session, "Error: " + e.getMessage());
+        }
     }
 
-    private void handleLeave(UserGameCommand cmd, Session session) throws IOException {
+    private void handleLeave(UserGameCommand cmd, Session session) throws IOException, DataAccessException
+    {
+        var username = authDAO.findUsernameByToken(cmd.getAuthToken());
         int gameID = cmd.getGameID();
 
         connections.remove(gameID, session);
 
-        NotificationMessage notif = new NotificationMessage("A user left the game");
-        connections.broadcast(gameID, session, gson.toJson(notif));
+        if (username != null) {
+            String message = username + " left the game";
+            NotificationMessage notif = new NotificationMessage(message);
+            connections.broadcast(gameID, session, gson.toJson(notif));
+        }
     }
 
-    private void handleResign(UserGameCommand cmd, Session session) throws IOException {
+    private void handleResign(UserGameCommand cmd, Session session) throws IOException, DataAccessException
+    {
+        var username = authDAO.findUsernameByToken(cmd.getAuthToken());
         int gameID = cmd.getGameID();
 
-        // TODO: mark game over in DB
+        try {
+            gameService.resign(cmd.getAuthToken(), gameID);
 
-        NotificationMessage notif = new NotificationMessage("A player resigned");
-        connections.broadcastAll(gameID, gson.toJson(notif));
+            String message = username + " resigned the game";
+            NotificationMessage notif = new NotificationMessage(message);
+
+            connections.broadcastAll(gameID, gson.toJson(notif));
+
+        } catch (Exception e) {
+            sendError(session, "Error: " + e.getMessage());
+        }
     }
 
     // =========================
@@ -114,12 +166,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         try {
             ErrorMessage err = new ErrorMessage(errorMsg);
             session.getRemote().sendString(gson.toJson(err));
-        } catch (IOException ignored) {
-        }
-    }
-
-    // You will replace this with your real game retrieval
-    private ChessGame getGame(int gameID) {
-        return null;
+        } catch (IOException ignored) {}
     }
 }

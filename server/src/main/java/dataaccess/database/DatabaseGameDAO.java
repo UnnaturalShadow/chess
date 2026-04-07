@@ -22,20 +22,28 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
 
     @Override
     public int save(GameData game) throws DataAccessException {
-        String json = GSON.toJson(game);
-        return executeCommand("INSERT INTO games (name, whiteUsername, blackUsername, game) VALUES (?, ?, ?, ?)",
-                game.gameName(), null, null, json);
+        String json = GSON.toJson(game); // unchanged (already correct)
+        return executeCommand(
+                "INSERT INTO games (name, whiteUsername, blackUsername, game) VALUES (?, ?, ?, ?)",
+                game.gameName(), null, null, json
+        );
     }
 
     @Override
     public GameData findById(int gameId) throws DataAccessException {
-        return executeQuery("SELECT * FROM games WHERE idgames = ?", rs -> new GameData(
-                rs.getInt("idgames"),
-                rs.getString("whiteUsername"),
-                rs.getString("blackUsername"),
-                rs.getString("name"),
-                GSON.fromJson(rs.getString("game"), ChessGame.class)
-        ), gameId);
+        return executeQuery("SELECT * FROM games WHERE idgames = ?", rs -> {
+            // 🔥 Deserialize full GameData (not just ChessGame)
+            GameData stored = GSON.fromJson(rs.getString("game"), GameData.class);
+
+            return new GameData(
+                    rs.getInt("idgames"),
+                    rs.getString("whiteUsername"),
+                    rs.getString("blackUsername"),
+                    rs.getString("name"),
+                    stored.game(),
+                    stored.gameOver() // preserve gameOver
+            );
+        }, gameId);
     }
 
     @Override
@@ -44,15 +52,21 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement("SELECT * FROM games");
              var rs = ps.executeQuery()) {
+
             while (rs.next()) {
+                // 🔥 Deserialize full GameData
+                GameData stored = GSON.fromJson(rs.getString("game"), GameData.class);
+
                 games.add(new GameData(
                         rs.getInt("idgames"),
                         rs.getString("whiteUsername"),
                         rs.getString("blackUsername"),
                         rs.getString("name"),
-                        GSON.fromJson(rs.getString("game"), ChessGame.class)
+                        stored.game(),
+                        stored.gameOver() // preserve gameOver
                 ));
             }
+
         } catch (Exception e) {
             throw new DataAccessException("Failed to retrieve games", e);
         }
@@ -73,16 +87,15 @@ public class DatabaseGameDAO extends AbstractDatabaseDAO implements GameDAO {
         }
 
         int rows = executeCommand(sql, username, gameId);
-        if (rows == 0)
-        {
+        if (rows == 0) {
             throw new AlreadyTakenException("Error: " + color + " player already assigned");
         }
     }
 
-    // ✅ NEW METHOD (CRITICAL FOR GAMEPLAY)
+    // ✅ UPDATED: store full GameData (including gameOver)
     @Override
     public void update(GameData game) throws DataAccessException {
-        String json = GSON.toJson(game.game());
+        String json = GSON.toJson(game); // 🔥 changed from game.game()
 
         int rows = executeCommand(
                 "UPDATE games SET whiteUsername = ?, blackUsername = ?, game = ? WHERE idgames = ?",

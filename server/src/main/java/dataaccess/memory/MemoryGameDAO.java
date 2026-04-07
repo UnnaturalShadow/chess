@@ -19,7 +19,7 @@ public class MemoryGameDAO implements GameDAO
     {
         int id = game.gameID() <= 0 ? nextId++ : game.gameID();
         GameData newGame = new GameData(id, game.whiteUsername(),
-                game.blackUsername(), game.gameName(), game.game());
+                game.blackUsername(), game.gameName(), game.game(), game.gameOver());
         games.put(id, newGame);
         return newGame.gameID();
     }
@@ -61,7 +61,8 @@ public class MemoryGameDAO implements GameDAO
                         username,
                         game.blackUsername(),
                         game.gameName(),
-                        game.game()
+                        game.game(),
+                        game.gameOver()
                 );
             }
 
@@ -76,7 +77,8 @@ public class MemoryGameDAO implements GameDAO
                         game.whiteUsername(),
                         username,
                         game.gameName(),
-                        game.game()
+                        game.game(),
+                        game.gameOver()
                 );
             }
 
