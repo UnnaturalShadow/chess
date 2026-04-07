@@ -18,10 +18,8 @@ import service.GameService;
 import service.UserService;
 import websocket.WebSocketManager;
 import websocket.commands.UserGameCommand;
-import websocket.messages.ServerMessage;
-import websocket.messages.LoadGameMessage;
-import websocket.messages.NotificationMessage;
-import websocket.messages.ErrorMessage;
+import websocket.commands.MakeMoveCommand;
+import websocket.messages.*;
 import chess.ChessMove;
 
 import java.util.HashMap;
@@ -64,6 +62,7 @@ public class Server {
 
         app = Javalin.create(config -> config.staticFiles.add("/web"));
 
+        // REST endpoints
         app.delete("/db", ctx -> {
             try {
                 userDAO.clear();
@@ -84,18 +83,25 @@ public class Server {
         app.get("/game", gameHandler::list);
         app.put("/game", gameHandler::join);
 
+        // WebSocket endpoint
         app.ws("/ws", ws -> {
 
-            ws.onConnect(ctx -> System.out.println("WebSocket connected: " + ctx.sessionId()));
+            ws.onConnect(ctx ->
+                    System.out.println("WebSocket connected: " + ctx.sessionId())
+            );
 
-            ws.onMessage(ctx -> handleWebSocketMessage(ctx, ctx.message()));
+            ws.onMessage(ctx ->
+                    handleWebSocketMessage(ctx, ctx.message())
+            );
 
             ws.onClose(ctx -> {
                 System.out.println("WebSocket disconnected: " + ctx.sessionId());
                 WebSocketManager.removeSession(ctx.session);
             });
 
-            ws.onError(ctx -> System.out.println("WebSocket error: " + ctx.error()));
+            ws.onError(ctx ->
+                    System.out.println("WebSocket error: " + ctx.error())
+            );
         });
     }
 
@@ -108,21 +114,26 @@ public class Server {
         app.stop();
     }
 
-    // --- WebSocket Logic ---
+    // =========================
+    // WebSocket Logic
+    // =========================
 
     private void handleWebSocketMessage(io.javalin.websocket.WsContext ctx, String messageJson) {
         try {
-            UserGameCommand command = gson.fromJson(messageJson, UserGameCommand.class);
+            UserGameCommand base = gson.fromJson(messageJson, UserGameCommand.class);
 
-            switch (command.getCommandType()) {
-                case CONNECT -> handleConnect(ctx, command);
-                case MAKE_MOVE -> handleMakeMove(ctx, command);
-                case LEAVE -> {
-                    // TODO
+            switch (base.getCommandType()) {
+
+                case CONNECT -> handleConnect(ctx, base);
+
+                case MAKE_MOVE -> {
+                    MakeMoveCommand moveCmd = gson.fromJson(messageJson, MakeMoveCommand.class);
+                    handleMakeMove(ctx, moveCmd);
                 }
-                case RESIGN -> {
-                    // TODO
-                }
+
+                case LEAVE -> handleLeave(ctx, base);
+
+                case RESIGN -> handleResign(ctx, base);
             }
 
         } catch (Exception e) {
@@ -132,21 +143,21 @@ public class Server {
 
     private void handleConnect(io.javalin.websocket.WsContext ctx, UserGameCommand cmd) {
         try {
-            var auth = authDAO.findUsernameByToken(cmd.getAuthToken());
-            var game = gameDAO.findById(cmd.getGameID());
+            var username = authDAO.findUsernameByToken(cmd.getAuthToken());
+            var gameData = gameDAO.findById(cmd.getGameID());
 
-            if (auth == null || game == null) {
+            if (username == null || gameData == null) {
                 sendError(ctx, "Error: invalid auth or game");
                 return;
             }
 
             WebSocketManager.addSession(cmd.getGameID(), ctx.session);
 
-            ctx.send(gson.toJson(new LoadGameMessage(game)));
+            // Send current game to root client
+            ctx.send(gson.toJson(new LoadGameMessage(gameData.game())));
 
-            String username = auth;
+            // Notify others
             String message = username + " joined the game";
-
             broadcast(cmd.getGameID(), new NotificationMessage(message), ctx.session);
 
         } catch (Exception e) {
@@ -154,40 +165,70 @@ public class Server {
         }
     }
 
-    private void handleMakeMove(io.javalin.websocket.WsContext ctx, UserGameCommand cmd) {
+    private void handleMakeMove(io.javalin.websocket.WsContext ctx, MakeMoveCommand cmd) {
         try {
-            var auth = authDAO.findUsernameByToken(cmd.getAuthToken());
-            if (auth == null) {
+            var username = authDAO.findUsernameByToken(cmd.getAuthToken());
+            if (username == null) {
                 sendError(ctx, "Error: invalid auth");
                 return;
             }
 
-            // Convert string to ChessMove
-            ChessMove move;
-            try {
-                move = ChessMove.fromString(cmd.getMove());
-            } catch (IllegalArgumentException e) {
-                sendError(ctx, "Error: invalid move format");
-                return;
-            }
+            ChessMove move = cmd.getMove();
 
             var updatedGame = gameService.makeMove(cmd.getAuthToken(), cmd.getGameID(), move);
 
-            // 1. Send updated board to ALL clients (including sender)
-            String loadJson = gson.toJson(new LoadGameMessage(updatedGame));
+            // Send updated game to ALL clients
+            String loadJson = gson.toJson(new LoadGameMessage(updatedGame.game()));
             for (Session s : WebSocketManager.getSessions(cmd.getGameID())) {
                 if (s.isOpen()) {
                     s.getRemote().sendString(loadJson);
                 }
             }
 
-            // 2. Notify others about move
-            String message = auth + " made a move";
+            // Notify others
+            String message = username + " made a move";
             broadcast(cmd.getGameID(), new NotificationMessage(message), ctx.session);
 
         } catch (Exception e) {
             sendError(ctx, "Error: " + e.getMessage());
         }
+    }
+
+    private void handleLeave(io.javalin.websocket.WsContext ctx, UserGameCommand cmd) {
+        try {
+            var username = authDAO.findUsernameByToken(cmd.getAuthToken());
+
+            WebSocketManager.removeSession(ctx.session);
+
+            if (username != null) {
+                String message = username + " left the game";
+                broadcast(cmd.getGameID(), new NotificationMessage(message), ctx.session);
+            }
+
+        } catch (Exception e) {
+            sendError(ctx, "Error: " + e.getMessage());
+        }
+    }
+
+    private void handleResign(io.javalin.websocket.WsContext ctx, UserGameCommand cmd) {
+//        try {
+//            var username = authDAO.findUsernameByToken(cmd.getAuthToken());
+//
+//            gameService.resign(cmd.getAuthToken(), cmd.getGameID());
+//
+//            String message = username + " resigned the game";
+//            String json = gson.toJson(new NotificationMessage(message));
+//
+//            for (Session s : WebSocketManager.getSessions(cmd.getGameID())) {
+//                if (s.isOpen()) {
+//                    s.getRemote().sendString(json);
+//                }
+//            }
+//
+//        } catch (Exception e) {
+//            sendError(ctx, "Error: " + e.getMessage());
+//        }
+        return;
     }
 
     private void broadcast(int gameID, ServerMessage message, Session exclude) {
@@ -206,6 +247,10 @@ public class Server {
     private void sendError(io.javalin.websocket.WsContext ctx, String msg) {
         ctx.send(gson.toJson(new ErrorMessage(msg)));
     }
+
+    // =========================
+    // Utility Methods
+    // =========================
 
     public static String buildJson(Object... keysAndVals) {
         Map<String, Object> pairs = new HashMap<>();
