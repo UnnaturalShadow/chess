@@ -48,7 +48,8 @@ public class GameService {
                 null,
                 null,
                 request.gameName(),
-                new ChessGame()
+                new ChessGame(),
+                false
         );
 
         return gameDAO.save(game);
@@ -134,7 +135,8 @@ public class GameService {
                 gameData.whiteUsername(),
                 gameData.blackUsername(),
                 gameData.gameName(),
-                game
+                game,
+                gameData.gameOver()
         );
 
         gameDAO.update(updated);

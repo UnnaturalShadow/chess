@@ -5,6 +5,8 @@ import chess.ChessGame;
 import chess.ChessPosition;
 import chess.ChessPiece;
 
+import java.util.Set;
+
 public class ChessBoardPrinter
 {
     private final ChessBoard board;
@@ -17,7 +19,18 @@ public class ChessBoardPrinter
         this.board = game.getBoard();
     }
 
+    // =========================
+    // NORMAL PRINT
+    // =========================
     public void printBoard(boolean blackPerspective)
+    {
+        printBoardWithHighlights(blackPerspective, null);
+    }
+
+    // =========================
+    // HIGHLIGHT PRINT
+    // =========================
+    public void printBoardWithHighlights(boolean blackPerspective, Set<ChessPosition> highlights)
     {
         String[] cols = blackPerspective
                 ? new String[]{"h","g","f","e","d","c","b","a"}
@@ -41,21 +54,33 @@ public class ChessBoardPrinter
             {
                 int col = blackPerspective ? 8 - c : c + 1;
 
+                ChessPosition pos = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(pos);
+
+                boolean isHighlight = highlights != null && highlights.contains(pos);
                 boolean light = (row + col) % 2 == 0;
 
-                ChessPiece piece = board.getPiece(new ChessPosition(row, col));
+                String bgColor;
 
-                if (piece == null)
+                // 🔥 Highlight overrides board color
+                if (isHighlight)
                 {
-                    System.out.print(light
-                            ? EscapeSequences.SET_BG_COLOR_BLUE + "   "
-                            : EscapeSequences.SET_BG_COLOR_WHITE + "   ");
+                    bgColor = EscapeSequences.SET_BG_COLOR_YELLOW;
                 }
                 else
                 {
-                    System.out.print(light
-                            ? EscapeSequences.SET_BG_COLOR_BLUE + " " + letterFor(piece) + EscapeSequences.SET_BG_COLOR_BLUE + " "
-                            : EscapeSequences.SET_BG_COLOR_WHITE + " " + letterFor(piece) +  EscapeSequences.SET_BG_COLOR_WHITE + " ");
+                    bgColor = light
+                            ? EscapeSequences.SET_BG_COLOR_BLUE
+                            : EscapeSequences.SET_BG_COLOR_WHITE;
+                }
+
+                if (piece == null)
+                {
+                    System.out.print(bgColor + "   ");
+                }
+                else
+                {
+                    System.out.print(bgColor + " " + letterFor(piece) + bgColor + " ");
                 }
             }
 
@@ -70,6 +95,9 @@ public class ChessBoardPrinter
         System.out.println("   " + reset);
     }
 
+    // =========================
+    // PIECE RENDERING
+    // =========================
     private String letterFor(ChessPiece p)
     {
         char ch;
@@ -90,7 +118,7 @@ public class ChessBoardPrinter
 
         if (p.getTeamColor() == ChessGame.TeamColor.WHITE)
         {
-            return EscapeSequences.SET_TEXT_COLOR_RED +letter + reset;
+            return EscapeSequences.SET_TEXT_COLOR_RED + letter + reset;
         }
         else
         {

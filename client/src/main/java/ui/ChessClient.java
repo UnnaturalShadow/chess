@@ -3,7 +3,7 @@ package ui;
 import java.net.URI;
 import java.util.*;
 
-import chess.ChessGame;
+import chess.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -11,21 +11,22 @@ import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
 import client.ServerFacade;
-import websocket.commands.UserGameCommand;
-import websocket.messages.ServerMessage;
-import websocket.WebSocketClientEndpoint;
+import client.websocket.NotificationHandler;
+import client.websocket.WebSocketFacade;
 
 public class ChessClient {
+
     private String loginState = "Logged Out";
 
     private final ServerFacade server;
     private final Scanner scanner = new Scanner(System.in);
+
     private ChessGame game;
     private GameData currentGameData;
     private AuthData auth = null;
     private List<GameData> lastGameList = new ArrayList<>();
-    private WebSocketClientEndpoint wsClient;
-    private final Gson gson = new Gson();
+
+    private WebSocketFacade ws;
 
     public ChessClient(ServerFacade server) {
         this.server = server;
@@ -42,6 +43,7 @@ public class ChessClient {
 
                 if (auth == null) handlePrelogin(input);
                 else handlePostlogin(input);
+
             } catch (Exception e) {
                 System.out.println(extractErrorMessage(e.getMessage()));
             }
@@ -49,11 +51,12 @@ public class ChessClient {
     }
 
     // ==========================
-    // Prelogin Commands
+    // Prelogin
     // ==========================
     private void handlePrelogin(String input) throws ResponseException {
         String[] parts = input.split(" ");
         String cmd = parts[0].toLowerCase();
+
         switch (cmd) {
             case "help" -> help();
             case "quit" -> quit();
@@ -89,11 +92,12 @@ public class ChessClient {
     }
 
     // ==========================
-    // Postlogin Commands
+    // Postlogin
     // ==========================
     private void handlePostlogin(String input) throws ResponseException {
         String[] parts = input.split(" ");
         String cmd = parts[0].toLowerCase();
+
         switch (cmd) {
             case "help" -> help();
             case "logout" -> logout();
@@ -102,6 +106,7 @@ public class ChessClient {
             case "join" -> joinGame(parts);
             case "observe" -> observeGame(parts);
             case "move" -> makeMove(parts);
+            case "highlight" -> highlightMoves(parts);
             case "quit" -> quit();
             default -> System.out.println("Unknown command. Type 'help'.");
         }
@@ -112,8 +117,9 @@ public class ChessClient {
         auth = null;
         currentGameData = null;
         game = null;
-        if (wsClient != null) wsClient.close();
-        wsClient = null;
+
+        ws = null;
+
         System.out.println("Logged out.");
         loginState = "Logged Out";
     }
@@ -124,17 +130,19 @@ public class ChessClient {
             return;
         }
         String name = input.substring(input.indexOf(" ") + 1);
-        int id = server.createGame(auth.authToken(), name);
+        server.createGame(auth.authToken(), name);
         System.out.println("Created game " + name);
     }
 
     private void listGames() throws ResponseException {
         GameData[] games = server.listGames(auth.authToken());
         lastGameList = Arrays.asList(games);
+
         if (games.length == 0) {
             System.out.println("No games available.");
             return;
         }
+
         for (int i = 0; i < games.length; i++) {
             var g = games[i];
             System.out.printf("%d. %s (White: %s, Black: %s)%n",
@@ -143,27 +151,26 @@ public class ChessClient {
     }
 
     // ==========================
-    // Join / Observe Game
+    // Join / Observe
     // ==========================
     private void joinGame(String[] parts) throws ResponseException {
         if (parts.length < 3) {
             System.out.println("Usage: join <number> <WHITE|BLACK>");
             return;
         }
+
         try {
             int index = Integer.parseInt(parts[1]) - 1;
             String color = parts[2].toUpperCase();
+
             if (!validIndex(index)) return;
 
             currentGameData = lastGameList.get(index);
-            game = currentGameData.game();
 
-            // Join the server-side game first
             server.joinGame(auth.authToken(), currentGameData.gameID(), color);
 
-            // Open websocket and wait for LOAD_GAME before allowing moves
             openWebSocket(currentGameData.gameID());
-            sendConnectMessage();
+            ws.connect(auth.authToken(), currentGameData.gameID());
 
             System.out.println("Joined game as " + color);
             loginState = "In Game";
@@ -178,16 +185,15 @@ public class ChessClient {
             System.out.println("Usage: observe <number>");
             return;
         }
+
         try {
             int index = Integer.parseInt(parts[1]) - 1;
             if (!validIndex(index)) return;
 
             currentGameData = lastGameList.get(index);
-            game = currentGameData.game();
 
-            // Open websocket and send CONNECT
             openWebSocket(currentGameData.gameID());
-            sendConnectMessage();
+            ws.connect(auth.authToken(), currentGameData.gameID());
 
             System.out.println("Observing game");
             loginState = "Observing";
@@ -201,47 +207,32 @@ public class ChessClient {
     // WebSocket
     // ==========================
     private void openWebSocket(int gameID) {
-        if (wsClient != null) return;
+        if (ws != null) return;
+
         try {
-            wsClient = new WebSocketClientEndpoint(new URI("ws://localhost:8080/ws"));
-            wsClient.addMessageHandler(this::handleServerMessage);
-        } catch (Exception e) {
-            System.out.println("Failed to open WebSocket: " + e.getMessage());
-        }
-    }
+            ws = new WebSocketFacade("http://localhost:8080", new NotificationHandler() {
 
-    private void sendConnectMessage() {
-        if (wsClient == null || currentGameData == null) return;
+                @Override
+                public void loadGame(ChessGame gameFromServer) {
+                    game = gameFromServer;
 
-        UserGameCommand connectCmd = new UserGameCommand(
-                UserGameCommand.CommandType.CONNECT,
-                auth.authToken(),
-                currentGameData.gameID()
-        );
-        wsClient.send(gson.toJson(connectCmd));
-    }
-
-    private void handleServerMessage(String messageJson) {
-        try {
-            ServerMessage msg = gson.fromJson(messageJson, ServerMessage.class);
-            switch (msg.getServerMessageType()) {
-                case LOAD_GAME -> {
-                    // Only update the game once the server confirms LOAD_GAME
-                    currentGameData = gson.fromJson(messageJson, GameData.class);
-                    game = currentGameData.game();
+                    // 🔥 redraw board on update
                     drawBoard(false);
                 }
-                case NOTIFICATION -> {
-                    JsonObject obj = JsonParser.parseString(messageJson).getAsJsonObject();
-                    System.out.println("Notification: " + obj.get("message").getAsString());
+
+                @Override
+                public void notify(String message) {
+                    System.out.println("Notification: " + message);
                 }
-                case ERROR -> {
-                    JsonObject obj = JsonParser.parseString(messageJson).getAsJsonObject();
-                    System.out.println("Error: " + obj.get("errorMessage").getAsString());
+
+                @Override
+                public void error(String message) {
+                    System.out.println("Error: " + message);
                 }
-            }
+            });
+
         } catch (Exception e) {
-            System.out.println("Failed to parse server message: " + e.getMessage());
+            System.out.println("Failed to open WebSocket: " + e.getMessage());
         }
     }
 
@@ -250,28 +241,73 @@ public class ChessClient {
     // ==========================
     private void makeMove(String[] parts) {
         if (parts.length < 2) {
-            System.out.println("Usage: move <from><to> (e.g., e2e4)");
+            System.out.println("Usage: move <from><to>");
             return;
         }
 
-        if (currentGameData == null || wsClient == null) {
-            System.out.println("You are not in a game or waiting for LOAD_GAME.");
+        if (currentGameData == null || ws == null) {
+            System.out.println("You are not in a game.");
             return;
         }
 
-        // Send the algebraic move directly; server expects string format
-        String moveStr = parts[1];
         try {
-            UserGameCommand moveCmd = new UserGameCommand(
-                    UserGameCommand.CommandType.MAKE_MOVE,
-                    auth.authToken(),
-                    currentGameData.gameID(),
-                    moveStr
-            );
-            wsClient.send(gson.toJson(moveCmd));
+            ChessMove move = ChessMove.fromString(parts[1]);
+
+            ws.makeMove(auth.authToken(), currentGameData.gameID(), move);
+
         } catch (Exception e) {
-            System.out.println("Failed to send move: " + e.getMessage());
+            System.out.println("Invalid move format.");
         }
+    }
+
+    // ==========================
+    // Highlight Moves
+    // ==========================
+    private void highlightMoves(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: highlight <position>");
+            return;
+        }
+
+        if (game == null) {
+            System.out.println("No game loaded.");
+            return;
+        }
+
+        try {
+            ChessPosition pos = ChessPosition.fromAlgebraic(parts[1]);
+
+            var moves = game.validMoves(pos);
+
+            if (moves == null || moves.isEmpty()) {
+                System.out.println("No valid moves.");
+                drawBoard(false);
+                return;
+            }
+
+            Set<ChessPosition> highlights = new HashSet<>();
+            for (ChessMove m : moves) {
+                highlights.add(m.getEndPosition());
+            }
+
+            drawBoardWithHighlights(highlights);
+
+        } catch (Exception e) {
+            System.out.println("Invalid position.");
+        }
+    }
+
+    // ==========================
+    // Drawing
+    // ==========================
+    private void drawBoard(boolean blackPerspective) {
+        ChessBoardPrinter printer = new ChessBoardPrinter(game);
+        printer.printBoard(blackPerspective);
+    }
+
+    private void drawBoardWithHighlights(Set<ChessPosition> highlights) {
+        ChessBoardPrinter printer = new ChessBoardPrinter(game);
+        printer.printBoardWithHighlights(false, highlights);
     }
 
     // ==========================
@@ -286,43 +322,18 @@ public class ChessClient {
     }
 
     private void help() {
-        if (auth == null) {
-            System.out.println("""
-                    Commands:
-                      help
-                      login <username> <password>
-                      register <username> <password> <email>
-                      quit
-                    """);
-        } else if (loginState.equals("In Game")) {
-            System.out.println("""
-                    Commands:
-                      help
-                      move <from><to>
-                      list
-                      join <number> <WHITE|BLACK>
-                      observe <number>
-                      logout
-                      quit
-                    """);
-        } else {
-            System.out.println("""
-                    Commands:
-                      help
-                      create <gameName>
-                      list
-                      join <number> <WHITE|BLACK>
-                      observe <number>
-                      move <from><to>
-                      logout
-                      quit
-                    """);
-        }
-    }
-
-    private void drawBoard(boolean blackPerspective) {
-        ChessBoardPrinter printer = new ChessBoardPrinter(game);
-        printer.printBoard(blackPerspective);
+        System.out.println("""
+                Commands:
+                  help
+                  create <gameName>
+                  list
+                  join <number> <WHITE|BLACK>
+                  observe <number>
+                  move <from><to>
+                  highlight <position>
+                  logout
+                  quit
+                """);
     }
 
     public static String extractErrorMessage(String rawMessage) {
@@ -333,7 +344,11 @@ public class ChessClient {
             String jsonPart = rawMessage.substring(jsonStart);
             JsonObject obj = JsonParser.parseString(jsonPart).getAsJsonObject();
             String message = obj.get("message").getAsString();
-            if (message.startsWith("Error: ")) message = message.substring(7);
+
+            if (message.startsWith("Error: ")) {
+                message = message.substring(7);
+            }
+
             return message;
         } catch (Exception e) {
             return rawMessage;
