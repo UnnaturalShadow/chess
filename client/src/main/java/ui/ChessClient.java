@@ -36,7 +36,7 @@ public class ChessClient {
         System.out.println("Welcome to Chess!");
         while (true) {
             try {
-                System.out.print("\n" + EscapeSequences.SET_TEXT_COLOR_BLUE + loginState
+                System.out.print("\n" + EscapeSequences.SET_TEXT_COLOR_BLUE + getPromptState()
                         + EscapeSequences.RESET_TEXT_COLOR + ">>> ");
                 String input = scanner.nextLine().trim();
                 if (input.isEmpty()) continue;
@@ -48,6 +48,13 @@ public class ChessClient {
                 System.out.println(extractErrorMessage(e.getMessage()));
             }
         }
+    }
+
+    private String getPromptState() {
+        if (currentGameData != null) {
+            return "In Game";
+        }
+        return (auth != null) ? "Logged In" : "Logged Out";
     }
 
     // ==========================
@@ -98,17 +105,30 @@ public class ChessClient {
         String[] parts = input.split(" ");
         String cmd = parts[0].toLowerCase();
 
-        switch (cmd) {
-            case "help" -> help();
-            case "logout" -> logout();
-            case "create" -> createGame(input);
-            case "list" -> listGames();
-            case "join" -> joinGame(parts);
-            case "observe" -> observeGame(parts);
-            case "move" -> makeMove(parts);
-            case "highlight" -> highlightMoves(parts);
-            case "quit" -> quit();
-            default -> System.out.println("Unknown command. Type 'help'.");
+        if (currentGameData != null) {
+            // In-game commands
+            switch (cmd) {
+                case "help" -> help();
+                case "redraw" -> drawBoard(false);
+                case "leave" -> leaveGame();
+                case "move" -> makeMove(parts);
+                case "highlight" -> highlightMoves(parts);
+                case "resign" -> resign();
+                case "quit" -> quit();
+                default -> System.out.println("Unknown command. Type 'help'.");
+            }
+        } else {
+            // Post-login commands
+            switch (cmd) {
+                case "help" -> help();
+                case "logout" -> logout();
+                case "create" -> createGame(input);
+                case "list" -> listGames();
+                case "join" -> joinGame(parts);
+                case "observe" -> observeGame(parts);
+                case "quit" -> quit();
+                default -> System.out.println("Unknown command. Type 'help'.");
+            }
         }
     }
 
@@ -117,9 +137,7 @@ public class ChessClient {
         auth = null;
         currentGameData = null;
         game = null;
-
         ws = null;
-
         System.out.println("Logged out.");
         loginState = "Logged Out";
     }
@@ -173,7 +191,6 @@ public class ChessClient {
             ws.connect(auth.authToken(), currentGameData.gameID());
 
             System.out.println("Joined game as " + color);
-            loginState = "In Game";
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid game number.");
@@ -196,7 +213,6 @@ public class ChessClient {
             ws.connect(auth.authToken(), currentGameData.gameID());
 
             System.out.println("Observing game");
-            loginState = "Observing";
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid game number.");
@@ -215,8 +231,6 @@ public class ChessClient {
                 @Override
                 public void loadGame(ChessGame gameFromServer) {
                     game = gameFromServer;
-
-                    // 🔥 redraw board on update
                     drawBoard(false);
                 }
 
@@ -252,9 +266,7 @@ public class ChessClient {
 
         try {
             ChessMove move = ChessMove.fromString(parts[1]);
-
             ws.makeMove(auth.authToken(), currentGameData.gameID(), move);
-
         } catch (Exception e) {
             System.out.println("Invalid move format.");
         }
@@ -276,7 +288,6 @@ public class ChessClient {
 
         try {
             ChessPosition pos = ChessPosition.fromAlgebraic(parts[1]);
-
             var moves = game.validMoves(pos);
 
             if (moves == null || moves.isEmpty()) {
@@ -294,6 +305,34 @@ public class ChessClient {
 
         } catch (Exception e) {
             System.out.println("Invalid position.");
+        }
+    }
+
+    // ==========================
+    // Leave / Resign
+    // ==========================
+    private void leaveGame() throws ResponseException {
+        if (ws != null && currentGameData != null) {
+            ws.leave(auth.authToken(), currentGameData.gameID());
+        }
+        currentGameData = null;
+        game = null;
+        ws = null;
+        System.out.println("Left the game.");
+    }
+
+    private void resign() throws ResponseException {
+        if (ws != null && currentGameData != null) {
+            System.out.print("Confirm resign? (yes/no): ");
+            String confirm = scanner.nextLine().trim().toLowerCase();
+            if (confirm.equals("yes")) {
+                ws.resign(auth.authToken(), currentGameData.gameID());
+                System.out.println("You have resigned.");
+            } else {
+                System.out.println("Resign cancelled.");
+            }
+        } else {
+            System.out.println("You are not in a game.");
         }
     }
 
@@ -322,18 +361,28 @@ public class ChessClient {
     }
 
     private void help() {
-        System.out.println("""
-                Commands:
-                  help
-                  create <gameName>
-                  list
-                  join <number> <WHITE|BLACK>
-                  observe <number>
-                  move <from><to>
-                  highlight <position>
-                  logout
-                  quit
-                """);
+        if (currentGameData != null) {
+            System.out.println("""
+                    Gameplay Commands:
+                      help                - Display this help text
+                      redraw              - Redraw the chess board
+                      leave               - Leave the current game
+                      move <from><to>     - Make a move
+                      resign              - Resign the game
+                      highlight <square>  - Highlight legal moves for a piece
+                    """);
+        } else {
+            System.out.println("""
+                    Post-Login Commands:
+                      help
+                      create <gameName>
+                      list
+                      join <number> <WHITE|BLACK>
+                      observe <number>
+                      logout
+                      quit
+                    """);
+        }
     }
 
     public static String extractErrorMessage(String rawMessage) {
