@@ -10,13 +10,16 @@ public class ConnectionManager {
     private final ConcurrentHashMap<Integer, Set<Session>> gameConnections = new ConcurrentHashMap<>();
 
     public void add(Integer gameID, Session session) {
-        gameConnections.computeIfAbsent(gameID, k -> ConcurrentHashMap.newKeySet()).add(session);
+        var sessions = gameConnections.computeIfAbsent(gameID, k -> ConcurrentHashMap.newKeySet());
+        sessions.add(session);
+        System.out.println("[ws-server] add game=" + gameID + " session=" + session.hashCode() + " count=" + sessions.size());
     }
 
     public void remove(Integer gameID, Session session) {
         var set = gameConnections.get(gameID);
         if (set != null) {
             set.remove(session);
+            System.out.println("[ws-server] remove game=" + gameID + " session=" + session.hashCode() + " count=" + set.size());
         }
     }
 
@@ -24,8 +27,10 @@ public class ConnectionManager {
         var sessions = gameConnections.get(gameID);
         if (sessions == null) return;
 
-        for (Session s : sessions) {
+        System.out.println("[ws-server] broadcast game=" + gameID + " exclude=" + (exclude == null ? "null" : exclude.hashCode()) + " count=" + sessions.size());
+        for (Session s : Set.copyOf(sessions)) {
             if (s.isOpen() && !s.equals(exclude)) {
+                System.out.println("[ws-server] -> session=" + s.hashCode());
                 s.getRemote().sendString(message);
             }
         }
@@ -35,8 +40,10 @@ public class ConnectionManager {
         var sessions = gameConnections.get(gameID);
         if (sessions == null) return;
 
-        for (Session s : sessions) {
+        System.out.println("[ws-server] broadcastAll game=" + gameID + " count=" + sessions.size());
+        for (Session s : Set.copyOf(sessions)) {
             if (s.isOpen()) {
+                System.out.println("[ws-server] -> session=" + s.hashCode());
                 s.getRemote().sendString(message);
             }
         }

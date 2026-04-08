@@ -1,6 +1,8 @@
 package client.websocket;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import exception.ResponseException;
 import websocket.commands.UserGameCommand;
 import websocket.commands.MakeMoveCommand;
@@ -11,12 +13,15 @@ import jakarta.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class WebSocketFacade extends Endpoint {
 
     private Session session;
     private final NotificationHandler handler;
     private final Gson gson = new Gson();
+    private final CountDownLatch openLatch = new CountDownLatch(1);
 
     public WebSocketFacade(String url, NotificationHandler handler) throws ResponseException {
         try {
@@ -26,7 +31,13 @@ public class WebSocketFacade extends Endpoint {
 
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
             this.session = container.connectToServer(this, socketURI);
+            if (!openLatch.await(2, TimeUnit.SECONDS)) {
+                throw new ResponseException(ResponseException.Code.ServerError, "WebSocket connection timed out");
+            }
 
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
         } catch (DeploymentException | IOException | URISyntaxException ex) {
             throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
         }
@@ -35,8 +46,14 @@ public class WebSocketFacade extends Endpoint {
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         this.session = session;
-        this.session.addMessageHandler((MessageHandler.Whole<String>) this::handleServerMessage);
+        this.session.addMessageHandler(new MessageHandler.Whole<String>() {
+            @Override
+            public void onMessage(String message) {
+                handleServerMessage(message);
+            }
+        });
         System.out.println("[ws] connected");
+        openLatch.countDown();
     }
 
     // =========================
@@ -45,27 +62,32 @@ public class WebSocketFacade extends Endpoint {
     private void handleServerMessage(String message) {
         System.out.println("[ws] recv: " + message);
         try {
-            ServerMessage base = gson.fromJson(message, ServerMessage.class);
+            JsonObject obj = JsonParser.parseString(message).getAsJsonObject();
+            String type = obj.get("serverMessageType").getAsString();
 
-            switch (base.getServerMessageType()) {
+            switch (ServerMessage.ServerMessageType.valueOf(type)) {
 
                 case LOAD_GAME -> {
                     LoadGameMessage msg = gson.fromJson(message, LoadGameMessage.class);
+                    System.out.println("[ws] load_game");
                     handler.loadGame(msg.getGame());
                 }
 
                 case NOTIFICATION -> {
                     NotificationMessage msg = gson.fromJson(message, NotificationMessage.class);
+                    System.out.println("[ws] notification");
                     handler.notify(msg.getMessage());
                 }
 
                 case ERROR -> {
                     ErrorMessage msg = gson.fromJson(message, ErrorMessage.class);
+                    System.out.println("[ws] server_error");
                     handler.error(msg.getErrorMessage());
                 }
             }
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             handler.error("Error: Failed to parse server message");
         }
     }
