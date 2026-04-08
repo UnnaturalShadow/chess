@@ -29,6 +29,9 @@ public class ChessClient {
 
     private WebSocketFacade ws;
 
+    // Track player perspective (true = black at bottom)
+    private boolean blackPerspective = false;
+
     public ChessClient(ServerFacade server) {
         this.server = server;
     }
@@ -110,7 +113,7 @@ public class ChessClient {
             // In-game commands
             switch (cmd) {
                 case "help" -> help();
-                case "redraw" -> drawBoard(false);
+                case "redraw" -> drawBoard(blackPerspective);
                 case "leave" -> leaveGame();
                 case "move" -> makeMove(parts);
                 case "highlight" -> highlightMoves(parts);
@@ -139,6 +142,7 @@ public class ChessClient {
         currentGameData = null;
         game = null;
         ws = null;
+        blackPerspective = false;
         System.out.println("Logged out.");
         loginState = "Logged Out";
     }
@@ -181,11 +185,6 @@ public class ChessClient {
         try {
             int index = Integer.parseInt(parts[1]) - 1;
             String color = parts[2].toUpperCase();
-            boolean bp = true;
-            if(color.equals("WHITE")) {
-                bp = false;
-            }
-
             if (!validIndex(index)) return;
 
             currentGameData = lastGameList.get(index);
@@ -196,8 +195,9 @@ public class ChessClient {
             openWebSocket(currentGameData.gameID());
             ws.connect(auth.authToken(), currentGameData.gameID());
 
+            blackPerspective = color.equals("BLACK");
             System.out.println("Joined game as " + color);
-            drawBoard(bp);
+            drawBoard(blackPerspective);
             inGame = true;
 
         } catch (NumberFormatException e) {
@@ -220,6 +220,7 @@ public class ChessClient {
             openWebSocket(currentGameData.gameID());
             ws.connect(auth.authToken(), currentGameData.gameID());
 
+            blackPerspective = false; // Observers see white at bottom
             System.out.println("Observing game");
 
         } catch (NumberFormatException e) {
@@ -234,12 +235,22 @@ public class ChessClient {
         if (ws != null) return;
 
         try {
-            ws = new WebSocketFacade("http://localhost:8080", new NotificationHandler() {
+            ws = new WebSocketFacade(server.getServerUrl(), new NotificationHandler() {
 
                 @Override
                 public void loadGame(ChessGame gameFromServer) {
                     game = gameFromServer;
-                    drawBoard(false);
+                    if (currentGameData != null) {
+                        currentGameData = new GameData(
+                                currentGameData.gameID(),
+                                currentGameData.whiteUsername(),
+                                currentGameData.blackUsername(),
+                                currentGameData.gameName(),
+                                gameFromServer,
+                                currentGameData.gameOver()
+                        );
+                    }
+                    drawBoard(blackPerspective);
                 }
 
                 @Override
@@ -249,7 +260,7 @@ public class ChessClient {
 
                 @Override
                 public void error(String message) {
-                    System.out.println("Error: " + message);
+                    System.out.println("[ws] error: " + message);
                 }
             });
 
@@ -262,8 +273,8 @@ public class ChessClient {
     // Make Move
     // ==========================
     private void makeMove(String[] parts) {
-        if (parts.length < 3) {
-            System.out.println("Usage: move <from> <to>");
+        if (parts.length < 2) {
+            System.out.println("Usage: move <from><to> or move <from> <to>");
             return;
         }
 
@@ -273,13 +284,23 @@ public class ChessClient {
         }
 
         try {
-            String moveStr = parts[1] + parts[2]; // combine into "e2e3"
+            String moveStr;
+            if (parts.length == 2) {
+                moveStr = parts[1];
+            } else if (parts.length == 3) {
+                moveStr = parts[1] + parts[2];
+            } else {
+                System.out.println("Usage: move <from><to> or move <from> <to>");
+                return;
+            }
+
             ChessMove move = ChessMove.fromString(moveStr);
             ws.makeMove(auth.authToken(), currentGameData.gameID(), move);
-            drawBoard(false);
-        } catch (Exception e) {
-            e.printStackTrace(); // TEMP: see real error
+            refreshCurrentGame();
+        } catch (IllegalArgumentException e) {
             System.out.println("Invalid move format.");
+        } catch (ResponseException e) {
+            System.out.println(extractErrorMessage(e.getMessage()));
         }
     }
 
@@ -303,7 +324,7 @@ public class ChessClient {
 
             if (moves == null || moves.isEmpty()) {
                 System.out.println("No valid moves.");
-                drawBoard(false);
+                drawBoard(blackPerspective);
                 return;
             }
 
@@ -329,6 +350,7 @@ public class ChessClient {
         currentGameData = null;
         game = null;
         ws = null;
+        blackPerspective = false;
         System.out.println("Left the game.");
         inGame = false;
     }
@@ -358,7 +380,7 @@ public class ChessClient {
 
     private void drawBoardWithHighlights(Set<ChessPosition> highlights) {
         ChessBoardPrinter printer = new ChessBoardPrinter(game);
-        printer.printBoardWithHighlights(false, highlights);
+        printer.printBoardWithHighlights(blackPerspective, highlights);
     }
 
     // ==========================
@@ -394,6 +416,30 @@ public class ChessClient {
                       logout
                       quit
                     """);
+        }
+    }
+
+    private void refreshCurrentGame() {
+        if (currentGameData == null) {
+            return;
+        }
+
+        try {
+            GameData[] games = server.listGames(auth.authToken());
+            lastGameList = Arrays.asList(games);
+
+            for (GameData candidate : games) {
+                if (candidate.gameID() == currentGameData.gameID()) {
+                    currentGameData = candidate;
+                    game = candidate.game();
+                    drawBoard(blackPerspective);
+                    return;
+                }
+            }
+
+            System.out.println("[http] refresh failed: current game not found");
+        } catch (ResponseException e) {
+            System.out.println("[http] refresh failed: " + extractErrorMessage(e.getMessage()));
         }
     }
 

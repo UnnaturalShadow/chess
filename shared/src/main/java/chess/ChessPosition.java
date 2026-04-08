@@ -1,5 +1,6 @@
 package chess;
 
+import com.google.gson.annotations.SerializedName;
 import java.util.Objects;
 
 /**
@@ -11,6 +12,7 @@ import java.util.Objects;
 public class ChessPosition
 {
     private int row;
+    @SerializedName(value = "col", alternate = {"column"})
     private int col;
 
 

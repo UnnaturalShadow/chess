@@ -43,7 +43,9 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         Session session = ctx.session;
 
         try {
+            System.out.println("[ws-server] recv: " + ctx.message());
             UserGameCommand command = gson.fromJson(ctx.message(), UserGameCommand.class);
+            System.out.println("[ws-server] type: " + command.getCommandType());
 
             switch (command.getCommandType()) {
 
@@ -107,10 +109,12 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
         int gameID = cmd.getGameID();
         ChessMove move = cmd.getMove();
+        System.out.println("[ws-server] makeMove user=" + username + " game=" + gameID + " move=" + move);
 
         try {
             // 🔥 REAL GAME LOGIC
             ChessGame updatedGame = gameService.makeMove(cmd.getAuthToken(), gameID, move).game();
+            System.out.println("[ws-server] move applied");
 
             // 1. Broadcast updated board to ALL
             LoadGameMessage loadMsg = new LoadGameMessage(updatedGame);
@@ -122,6 +126,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             connections.broadcast(gameID, session, gson.toJson(notif));
 
         } catch (Exception e) {
+            System.out.println("[ws-server] move failed: " + e.getMessage());
             sendError(session, "Error: " + e.getMessage());
         }
     }

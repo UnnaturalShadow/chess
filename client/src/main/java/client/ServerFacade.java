@@ -162,6 +162,11 @@ public class ServerFacade
         makeRequest("DELETE", "/db", null, null, null);
     }
 
+    public String getServerUrl()
+    {
+        return serverUrl;
+    }
+
     // =========================
     // Request/Response DTOs
     // =========================

@@ -108,7 +108,7 @@ public class MemoryDAOTests {
         var gameDAO = new MemoryGameDAO();
         gameDAO.clear();
 
-        GameData game = new GameData(0, null, null, "Chess1", null);
+        GameData game = new GameData(0, null, null, "Chess1", null, false);
         int id = gameDAO.save(game);
 
         GameData fetched = gameDAO.findById(id);
@@ -128,8 +128,8 @@ public class MemoryDAOTests {
         var gameDAO = new MemoryGameDAO();
         gameDAO.clear();
 
-        gameDAO.save(new GameData(0, null, null, "G1", null));
-        gameDAO.save(new GameData(0, null, null, "G2", null));
+        gameDAO.save(new GameData(0, null, null, "G1", null, false));
+        gameDAO.save(new GameData(0, null, null, "G2", null, false));
 
         List<GameData> allGames = gameDAO.findAll();
         assertEquals(2, allGames.size());
@@ -140,7 +140,7 @@ public class MemoryDAOTests {
         var gameDAO = new MemoryGameDAO();
         gameDAO.clear();
 
-        int id = gameDAO.save(new GameData(0, null, null, "Chess2", null));
+        int id = gameDAO.save(new GameData(0, null, null, "Chess2", null, false));
 
         gameDAO.assignPlayer(id, "player1", PlayerColor.WHITE);
         AlreadyTakenException ex = assertThrows(AlreadyTakenException.class,
@@ -153,7 +153,7 @@ public class MemoryDAOTests {
         var gameDAO = new MemoryGameDAO();
         gameDAO.clear();
 
-        int id = gameDAO.save(new GameData(0, null, null, "Chess3", null));
+        int id = gameDAO.save(new GameData(0, null, null, "Chess3", null, false));
 
         gameDAO.assignPlayer(id, "player1", PlayerColor.BLACK);
         AlreadyTakenException ex = assertThrows(AlreadyTakenException.class,

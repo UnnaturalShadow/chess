@@ -116,7 +116,7 @@ public class DatabaseDAOTests {
         var gameDAO = new DatabaseGameDAO();
         gameDAO.clear();
 
-        GameData game = new GameData(0, null, null, "ChessGame1", null);
+        GameData game = new GameData(0, null, null, "ChessGame1", null, false);
         int id = gameDAO.save(game);
 
         GameData fetched = gameDAO.findById(id);
@@ -128,8 +128,8 @@ public class DatabaseDAOTests {
         var gameDAO = new DatabaseGameDAO();
         gameDAO.clear();
 
-        GameData game1 = new GameData(0, null, null, "G1", null);
-        GameData game2 = new GameData(0, null, null, "G2", null);
+        GameData game1 = new GameData(0, null, null, "G1", null, false);
+        GameData game2 = new GameData(0, null, null, "G2", null, false);
         gameDAO.save(game1);
         gameDAO.save(game2);
 
@@ -142,7 +142,7 @@ public class DatabaseDAOTests {
         var gameDAO = new DatabaseGameDAO();
         gameDAO.clear();
 
-        GameData game = new GameData(0, null, null, "ChessGame2", null);
+        GameData game = new GameData(0, null, null, "ChessGame2", null, false);
         int id = gameDAO.save(game);
 
         gameDAO.assignPlayer(id, "player1", PlayerColor.WHITE);

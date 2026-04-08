@@ -1,5 +1,6 @@
 package chess;
 
+import com.google.gson.annotations.SerializedName;
 import java.util.Objects;
 
 /**
@@ -10,8 +11,11 @@ import java.util.Objects;
  */
 public class ChessMove
 {
+    @SerializedName(value = "start", alternate = {"startPosition"})
     private ChessPosition start;
+    @SerializedName(value = "end", alternate = {"endPosition"})
     private ChessPosition end;
+    @SerializedName(value = "promote", alternate = {"promotionPiece"})
     private ChessPiece.PieceType promote;
 
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition,

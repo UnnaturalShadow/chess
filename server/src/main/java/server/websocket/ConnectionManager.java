@@ -40,5 +40,6 @@ public class ConnectionManager {
                 s.getRemote().sendString(message);
             }
         }
+        System.out.println("Broadcasting to game " + gameID + ": " + message);
     }
 }

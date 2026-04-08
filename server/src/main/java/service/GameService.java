@@ -117,15 +117,19 @@ public class GameService {
         }
 
         // Check turn
-        if (!game.getTeamTurn().equals(playerColor))
+        ChessGame.TeamColor expectedTurn = ChessGame.TeamColor.valueOf(playerColor.name());
+        if (!game.getTeamTurn().equals(expectedTurn))
         {
             throw new InvalidMoveException("Error: Not your turn");
         }
 
         // Attempt move (ChessGame should validate legality)
         try {
+            System.out.println("[game-service] before move " + move);
             game.makeMove(move);
+            System.out.println("[game-service] after move turn=" + game.getTeamTurn());
         } catch (Exception e) {
+            System.out.println("[game-service] move rejected: " + e.getMessage());
             throw new InvalidMoveException("Error: Invalid move");
         }
 
@@ -140,6 +144,7 @@ public class GameService {
         );
 
         gameDAO.update(updated);
+        System.out.println("[game-service] persisted move for game " + gameID);
 
         return updated;
     }
