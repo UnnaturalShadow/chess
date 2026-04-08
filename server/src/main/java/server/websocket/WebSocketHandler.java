@@ -65,6 +65,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     @Override
     public void handleClose(WsCloseContext ctx) {
+        connections.remove(ctx.session);
     }
 
     // =========================

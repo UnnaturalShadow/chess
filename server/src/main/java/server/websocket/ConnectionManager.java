@@ -21,6 +21,12 @@ public class ConnectionManager {
         }
     }
 
+    public void remove(Session session) {
+        for (var set : gameConnections.values()) {
+            set.remove(session);
+        }
+    }
+
     public void broadcast(Integer gameID, Session exclude, String message) throws IOException {
         var sessions = gameConnections.get(gameID);
         if (sessions == null) return;
