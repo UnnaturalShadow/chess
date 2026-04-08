@@ -29,7 +29,9 @@ public class ConnectionManager {
 
     public void broadcast(Integer gameID, Session exclude, String message) throws IOException {
         var sessions = gameConnections.get(gameID);
-        if (sessions == null) return;
+        if (sessions == null) {
+            return;
+        }
 
         for (Session s : Set.copyOf(sessions)) {
             if (s.isOpen() && !s.equals(exclude)) {
@@ -40,7 +42,9 @@ public class ConnectionManager {
 
     public void broadcastAll(Integer gameID, String message) throws IOException {
         var sessions = gameConnections.get(gameID);
-        if (sessions == null) return;
+        if (sessions == null) {
+            return;
+        }
 
         for (Session s : Set.copyOf(sessions)) {
             if (s.isOpen()) {

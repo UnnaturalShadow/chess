@@ -44,10 +44,15 @@ public class ChessClient {
                 System.out.print("\n" + EscapeSequences.SET_TEXT_COLOR_BLUE + getPromptState()
                         + EscapeSequences.RESET_TEXT_COLOR + ">>> ");
                 String input = scanner.nextLine().trim();
-                if (input.isEmpty()) continue;
+                if (input.isEmpty()) {
+                    continue;
+                }
 
-                if (auth == null) handlePrelogin(input);
-                else handlePostlogin(input);
+                if (auth == null) {
+                    handlePrelogin(input);
+                } else {
+                    handlePostlogin(input);
+                }
 
             } catch (Exception e) {
                 System.out.println(extractErrorMessage(e.getMessage()));
@@ -187,7 +192,9 @@ public class ChessClient {
         try {
             int index = Integer.parseInt(parts[1]) - 1;
             String color = parts[2].toUpperCase();
-            if (!validIndex(index)) return;
+            if (!validIndex(index)) {
+                return;
+            }
 
             GameData selectedGame = lastGameList.get(index);
             server.joinGame(auth.authToken(), selectedGame.gameID(), color);
@@ -215,7 +222,9 @@ public class ChessClient {
 
         try {
             int index = Integer.parseInt(parts[1]) - 1;
-            if (!validIndex(index)) return;
+            if (!validIndex(index)) {
+                return;
+            }
 
             GameData selectedGame = lastGameList.get(index);
 
@@ -238,7 +247,9 @@ public class ChessClient {
     // WebSocket
     // ==========================
     private void openWebSocket(int gameID) {
-        if (ws != null) return;
+        if (ws != null) {
+            return;
+        }
 
         try {
             ws = new WebSocketFacade(server.getServerUrl(), new NotificationHandler() {
@@ -447,7 +458,9 @@ public class ChessClient {
     public static String extractErrorMessage(String rawMessage) {
         try {
             int jsonStart = rawMessage.indexOf('{');
-            if (jsonStart == -1) return rawMessage;
+            if (jsonStart == -1) {
+                return rawMessage;
+            }
 
             String jsonPart = rawMessage.substring(jsonStart);
             JsonObject obj = JsonParser.parseString(jsonPart).getAsJsonObject();
