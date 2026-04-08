@@ -45,7 +45,6 @@ public class WebSocketFacade extends Endpoint {
     // =========================
     // RECEIVE (Server → Client)
     // =========================
-
     private void handleServerMessage(String message) {
         try {
             ServerMessage base = gson.fromJson(message, ServerMessage.class);
@@ -76,7 +75,6 @@ public class WebSocketFacade extends Endpoint {
     // =========================
     // SEND (Client → Server)
     // =========================
-
     public void connect(String authToken, int gameID) throws ResponseException {
         try {
             var cmd = new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
