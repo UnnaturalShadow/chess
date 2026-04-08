@@ -85,7 +85,7 @@ public class Server {
             ws.onConnect(wsHandler::handleConnect);
             ws.onMessage(wsHandler::handleMessage);
             ws.onClose(wsHandler::handleClose);
-            ws.onError(ctx -> System.out.println("WebSocket error: " + ctx.error()));
+            ws.onError(ctx -> {});
         });
     }
 

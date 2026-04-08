@@ -31,6 +31,7 @@ public class ChessClient {
 
     // Track player perspective (true = black at bottom)
     private boolean blackPerspective = false;
+    private boolean observerMode = false;
 
     public ChessClient(ServerFacade server) {
         this.server = server;
@@ -143,6 +144,7 @@ public class ChessClient {
         game = null;
         ws = null;
         blackPerspective = false;
+        observerMode = false;
         System.out.println("Logged out.");
         loginState = "Logged Out";
     }
@@ -190,13 +192,13 @@ public class ChessClient {
             GameData selectedGame = lastGameList.get(index);
             server.joinGame(auth.authToken(), selectedGame.gameID(), color);
 
+            blackPerspective = color.equals("BLACK");
+            openWebSocket(selectedGame.gameID());
+            ws.connect(auth.authToken(), selectedGame.gameID());
+
             currentGameData = selectedGame;
             game = currentGameData.game();
-
-            openWebSocket(currentGameData.gameID());
-            ws.connect(auth.authToken(), currentGameData.gameID());
-
-            blackPerspective = color.equals("BLACK");
+            observerMode = false;
             System.out.println("Joined game as " + color);
             inGame = true;
 
@@ -217,12 +219,14 @@ public class ChessClient {
 
             GameData selectedGame = lastGameList.get(index);
 
+            blackPerspective = false;
             openWebSocket(selectedGame.gameID());
             ws.connect(auth.authToken(), selectedGame.gameID());
 
             currentGameData = selectedGame;
             game = currentGameData.game();
-            blackPerspective = false; // Observers see white at bottom
+            observerMode = true;
+            inGame = true;
             System.out.println("Observing game");
 
         } catch (NumberFormatException e) {
@@ -257,12 +261,12 @@ public class ChessClient {
 
                 @Override
                 public void notify(String message) {
-                    System.out.println("Notification: " + message);
+                    System.out.println(message);
                 }
 
                 @Override
                 public void error(String message) {
-                    System.out.println("[ws] error: " + message);
+                    System.out.println(message);
                 }
             });
 
@@ -282,6 +286,11 @@ public class ChessClient {
 
         if (currentGameData == null || ws == null) {
             System.out.println("You are not in a game.");
+            return;
+        }
+
+        if (observerMode) {
+            System.out.println("Observers cannot make moves.");
             return;
         }
 
@@ -352,12 +361,17 @@ public class ChessClient {
         game = null;
         ws = null;
         blackPerspective = false;
+        observerMode = false;
         System.out.println("Left the game.");
         inGame = false;
     }
 
     private void resign() throws ResponseException {
         if (ws != null && currentGameData != null) {
+            if (observerMode) {
+                System.out.println("Observers cannot resign.");
+                return;
+            }
             System.out.print("Confirm resign? (yes/no): ");
             String confirm = scanner.nextLine().trim().toLowerCase();
             if (confirm.equals("yes")) {
@@ -397,15 +411,25 @@ public class ChessClient {
 
     private void help() {
         if (currentGameData != null) {
-            System.out.println("""
-                    Gameplay Commands:
-                      help                - Display this help text
-                      redraw              - Redraw the chess board
-                      leave               - Leave the current game
-                      move <from><to>     - Make a move
-                      resign              - Resign the game
-                      highlight <square>  - Highlight legal moves for a piece
-                    """);
+            if (observerMode) {
+                System.out.println("""
+                        Gameplay Commands:
+                          help                - Display this help text
+                          redraw              - Redraw the chess board
+                          leave               - Leave the current game
+                          highlight <square>  - Highlight legal moves for a piece
+                        """);
+            } else {
+                System.out.println("""
+                        Gameplay Commands:
+                          help                - Display this help text
+                          redraw              - Redraw the chess board
+                          leave               - Leave the current game
+                          move <from><to>     - Make a move
+                          resign              - Resign the game
+                          highlight <square>  - Highlight legal moves for a piece
+                        """);
+            }
         } else {
             System.out.println("""
                     Post-Login Commands:

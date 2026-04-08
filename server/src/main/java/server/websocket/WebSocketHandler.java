@@ -34,7 +34,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     @Override
     public void handleConnect(WsConnectContext ctx) {
-        System.out.println("WebSocket connected");
         ctx.enableAutomaticPings();
     }
 
@@ -43,9 +42,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         Session session = ctx.session;
 
         try {
-            System.out.println("[ws-server] recv: " + ctx.message());
             UserGameCommand command = gson.fromJson(ctx.message(), UserGameCommand.class);
-            System.out.println("[ws-server] type: " + command.getCommandType());
 
             switch (command.getCommandType()) {
 
@@ -68,7 +65,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     @Override
     public void handleClose(WsCloseContext ctx) {
-        System.out.println("WebSocket closed");
     }
 
     // =========================
@@ -93,7 +89,14 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         session.getRemote().sendString(gson.toJson(loadMsg));
 
         // 2. Notify others
-        String message = username + " joined the game";
+        String message;
+        if (username.equals(gameData.whiteUsername())) {
+            message = username + " joined the game as WHITE";
+        } else if (username.equals(gameData.blackUsername())) {
+            message = username + " joined the game as BLACK";
+        } else {
+            message = username + " joined the game as an observer";
+        }
         NotificationMessage notif = new NotificationMessage(message);
         connections.broadcast(gameID, session, gson.toJson(notif));
     }
@@ -109,24 +112,37 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
         int gameID = cmd.getGameID();
         ChessMove move = cmd.getMove();
-        System.out.println("[ws-server] makeMove user=" + username + " game=" + gameID + " move=" + move);
 
         try {
-            // 🔥 REAL GAME LOGIC
             ChessGame updatedGame = gameService.makeMove(cmd.getAuthToken(), gameID, move).game();
-            System.out.println("[ws-server] move applied");
 
             // 1. Broadcast updated board to ALL
             LoadGameMessage loadMsg = new LoadGameMessage(updatedGame);
             connections.broadcastAll(gameID, gson.toJson(loadMsg));
 
             // 2. Notify others
-            String message = username + " made a move";
+            String message = username + " moved " + describeMove(move);
             NotificationMessage notif = new NotificationMessage(message);
             connections.broadcast(gameID, session, gson.toJson(notif));
 
+            if (updatedGame.isInCheckmate(updatedGame.getTeamTurn())) {
+                NotificationMessage state = new NotificationMessage(
+                        playerNameForTurn(gameDAO.findById(gameID), updatedGame.getTeamTurn()) + " is in checkmate"
+                );
+                connections.broadcastAll(gameID, gson.toJson(state));
+            } else if (updatedGame.isInStalemate(updatedGame.getTeamTurn())) {
+                NotificationMessage state = new NotificationMessage(
+                        playerNameForTurn(gameDAO.findById(gameID), updatedGame.getTeamTurn()) + " is in stalemate"
+                );
+                connections.broadcastAll(gameID, gson.toJson(state));
+            } else if (updatedGame.isInCheck(updatedGame.getTeamTurn())) {
+                NotificationMessage state = new NotificationMessage(
+                        playerNameForTurn(gameDAO.findById(gameID), updatedGame.getTeamTurn()) + " is in check"
+                );
+                connections.broadcastAll(gameID, gson.toJson(state));
+            }
+
         } catch (Exception e) {
-            System.out.println("[ws-server] move failed: " + e.getMessage());
             sendError(session, "Error: " + e.getMessage());
         }
     }
@@ -135,6 +151,29 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     {
         var username = authDAO.findUsernameByToken(cmd.getAuthToken());
         int gameID = cmd.getGameID();
+
+        var gameData = gameDAO.findById(gameID);
+        if (gameData != null && username != null) {
+            if (username.equals(gameData.whiteUsername())) {
+                gameDAO.update(new model.GameData(
+                        gameData.gameID(),
+                        null,
+                        gameData.blackUsername(),
+                        gameData.gameName(),
+                        gameData.game(),
+                        gameData.gameOver()
+                ));
+            } else if (username.equals(gameData.blackUsername())) {
+                gameDAO.update(new model.GameData(
+                        gameData.gameID(),
+                        gameData.whiteUsername(),
+                        null,
+                        gameData.gameName(),
+                        gameData.game(),
+                        gameData.gameOver()
+                ));
+            }
+        }
 
         connections.remove(gameID, session);
 
@@ -172,5 +211,25 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             ErrorMessage err = new ErrorMessage(errorMsg);
             session.getRemote().sendString(gson.toJson(err));
         } catch (IOException ignored) {}
+    }
+
+    private String describeMove(ChessMove move) {
+        return toAlgebraic(move.getStartPosition()) + " to " + toAlgebraic(move.getEndPosition());
+    }
+
+    private String toAlgebraic(chess.ChessPosition position) {
+        char file = (char) ('a' + position.getColumn() - 1);
+        char rank = (char) ('1' + position.getRow() - 1);
+        return "" + file + rank;
+    }
+
+    private String playerNameForTurn(model.GameData gameData, ChessGame.TeamColor turn) {
+        if (gameData == null) {
+            return "A player";
+        }
+        return switch (turn) {
+            case WHITE -> gameData.whiteUsername() != null ? gameData.whiteUsername() : "White";
+            case BLACK -> gameData.blackUsername() != null ? gameData.blackUsername() : "Black";
+        };
     }
 }

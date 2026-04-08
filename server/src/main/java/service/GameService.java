@@ -106,6 +106,10 @@ public class GameService {
             throw new InvalidMoveException("Error: Game state missing");
         }
 
+        if (gameData.gameOver()) {
+            throw new InvalidMoveException("Error: Game already over");
+        }
+
         // Determine player color
         PlayerColor playerColor = null;
         if (username.equals(gameData.whiteUsername())) {
@@ -125,13 +129,12 @@ public class GameService {
 
         // Attempt move (ChessGame should validate legality)
         try {
-            System.out.println("[game-service] before move " + move);
             game.makeMove(move);
-            System.out.println("[game-service] after move turn=" + game.getTeamTurn());
         } catch (Exception e) {
-            System.out.println("[game-service] move rejected: " + e.getMessage());
             throw new InvalidMoveException("Error: Invalid move");
         }
+
+        boolean gameOver = game.isInCheckmate(game.getTeamTurn()) || game.isInStalemate(game.getTeamTurn());
 
         // Save updated game
         GameData updated = new GameData(
@@ -140,11 +143,10 @@ public class GameService {
                 gameData.blackUsername(),
                 gameData.gameName(),
                 game,
-                gameData.gameOver()
+                gameOver
         );
 
         gameDAO.update(updated);
-        System.out.println("[game-service] persisted move for game " + gameID);
 
         return updated;
     }

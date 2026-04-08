@@ -91,7 +91,9 @@ public class MemoryGameDAO implements GameDAO
     @Override
     public void update(GameData game) throws DataAccessException
     {
-        return;
+        if (game != null) {
+            games.put(game.gameID(), game);
+        }
     }
 
     @Override
