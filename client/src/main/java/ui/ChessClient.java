@@ -17,6 +17,7 @@ import client.websocket.WebSocketFacade;
 public class ChessClient {
 
     private String loginState = "Logged Out";
+    private boolean inGame = false;
 
     private final ServerFacade server;
     private final Scanner scanner = new Scanner(System.in);
@@ -51,7 +52,7 @@ public class ChessClient {
     }
 
     private String getPromptState() {
-        if (currentGameData != null) {
+        if (inGame) {
             return "In Game";
         }
         return (auth != null) ? "Logged In" : "Logged Out";
@@ -180,10 +181,15 @@ public class ChessClient {
         try {
             int index = Integer.parseInt(parts[1]) - 1;
             String color = parts[2].toUpperCase();
+            boolean bp = true;
+            if(color.equals("WHITE")) {
+                bp = false;
+            }
 
             if (!validIndex(index)) return;
 
             currentGameData = lastGameList.get(index);
+            game = currentGameData.game();
 
             server.joinGame(auth.authToken(), currentGameData.gameID(), color);
 
@@ -191,6 +197,8 @@ public class ChessClient {
             ws.connect(auth.authToken(), currentGameData.gameID());
 
             System.out.println("Joined game as " + color);
+            drawBoard(bp);
+            inGame = true;
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid game number.");
@@ -254,8 +262,8 @@ public class ChessClient {
     // Make Move
     // ==========================
     private void makeMove(String[] parts) {
-        if (parts.length < 2) {
-            System.out.println("Usage: move <from><to>");
+        if (parts.length < 3) {
+            System.out.println("Usage: move <from> <to>");
             return;
         }
 
@@ -265,9 +273,12 @@ public class ChessClient {
         }
 
         try {
-            ChessMove move = ChessMove.fromString(parts[1]);
+            String moveStr = parts[1] + parts[2]; // combine into "e2e3"
+            ChessMove move = ChessMove.fromString(moveStr);
             ws.makeMove(auth.authToken(), currentGameData.gameID(), move);
+            drawBoard(false);
         } catch (Exception e) {
+            e.printStackTrace(); // TEMP: see real error
             System.out.println("Invalid move format.");
         }
     }
@@ -319,6 +330,7 @@ public class ChessClient {
         game = null;
         ws = null;
         System.out.println("Left the game.");
+        inGame = false;
     }
 
     private void resign() throws ResponseException {

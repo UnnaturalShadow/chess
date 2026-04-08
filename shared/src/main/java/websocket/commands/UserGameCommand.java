@@ -12,21 +12,16 @@ public class UserGameCommand {
 
     private final CommandType commandType;
     private final String authToken;
-    private final Integer gameID;
+    private final int gameID;
 
     // NEW: optional move string (e.g., "e2e4" or "e7e8Q")
-    private final String move;
 
-    public UserGameCommand(CommandType commandType, String authToken, Integer gameID) {
-        this(commandType, authToken, gameID, null);
-    }
 
     // NEW constructor that includes a move
-    public UserGameCommand(CommandType commandType, String authToken, Integer gameID, String move) {
+    public UserGameCommand(CommandType commandType, String authToken, int gameID) {
         this.commandType = commandType;
         this.authToken = authToken;
         this.gameID = gameID;
-        this.move = move;
     }
 
     public enum CommandType {

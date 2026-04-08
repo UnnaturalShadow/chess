@@ -64,7 +64,7 @@ public class WebSocketClientEndpoint {
 
     public void sendMakeMoveCommand(String token, int gameID, ChessMove move) throws ResponseException {
         try {
-            var command = new UserGameCommand(UserGameCommand.CommandType.MAKE_MOVE, token, gameID, move.toString());
+            var command = new UserGameCommand(UserGameCommand.CommandType.MAKE_MOVE, token, gameID);
             userSession.getBasicRemote().sendText(gson.toJson(command));
         } catch (IOException ex) {
             throw new ResponseException(ResponseException.Code.ServerError, ex.getMessage());
