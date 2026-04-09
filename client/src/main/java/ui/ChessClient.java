@@ -41,8 +41,10 @@ public class ChessClient {
         System.out.println("Welcome to Chess!");
         while (true) {
             try {
-                System.out.print("\n" + EscapeSequences.SET_TEXT_COLOR_BLUE + getPromptState()
-                        + EscapeSequences.RESET_TEXT_COLOR + ">>> ");
+                System.out.println();
+                System.out.println(EscapeSequences.SET_TEXT_COLOR_BLUE + getPromptState()
+                        + EscapeSequences.RESET_TEXT_COLOR);
+                System.out.print(">>> ");
                 String input = scanner.nextLine().trim();
                 if (input.isEmpty()) {
                     continue;
@@ -200,12 +202,11 @@ public class ChessClient {
             server.joinGame(auth.authToken(), selectedGame.gameID(), color);
 
             blackPerspective = color.equals("BLACK");
-            openWebSocket(selectedGame.gameID());
-            ws.connect(auth.authToken(), selectedGame.gameID());
-
             currentGameData = selectedGame;
             game = currentGameData.game();
             observerMode = false;
+            openWebSocket(selectedGame.gameID());
+            ws.connect(auth.authToken(), selectedGame.gameID());
             System.out.println("Joined game as " + color);
             inGame = true;
 
@@ -229,12 +230,11 @@ public class ChessClient {
             GameData selectedGame = lastGameList.get(index);
 
             blackPerspective = false;
-            openWebSocket(selectedGame.gameID());
-            ws.connect(auth.authToken(), selectedGame.gameID());
-
             currentGameData = selectedGame;
             game = currentGameData.game();
             observerMode = true;
+            openWebSocket(selectedGame.gameID());
+            ws.connect(auth.authToken(), selectedGame.gameID());
             inGame = true;
             System.out.println("Observing game");
 
@@ -400,11 +400,13 @@ public class ChessClient {
     // Drawing
     // ==========================
     private void drawBoard(boolean blackPerspective) {
+        System.out.println();
         ChessBoardPrinter printer = new ChessBoardPrinter(game);
         printer.printBoard(blackPerspective);
     }
 
     private void drawBoardWithHighlights(Set<ChessPosition> highlights) {
+        System.out.println();
         ChessBoardPrinter printer = new ChessBoardPrinter(game);
         printer.printBoardWithHighlights(blackPerspective, highlights);
     }

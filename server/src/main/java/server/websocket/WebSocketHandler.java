@@ -59,7 +59,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             }
 
         } catch (Exception ex) {
-            sendError(session, "Error: " + ex.getMessage());
+            sendError(session, ex.getMessage());
         }
     }
 
@@ -78,7 +78,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         var gameData = gameDAO.findById(cmd.getGameID());
 
         if (username == null || gameData == null) {
-            sendError(session, "Error: invalid auth or game");
+            sendError(session, "invalid auth or game");
             return;
         }
 
@@ -107,7 +107,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         var username = authDAO.findUsernameByToken(cmd.getAuthToken());
 
         if (username == null) {
-            sendError(session, "Error: invalid auth");
+            sendError(session, "invalid auth");
             return;
         }
 
@@ -144,7 +144,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             }
 
         } catch (Exception e) {
-            sendError(session, "Error: " + e.getMessage());
+            sendError(session, e.getMessage());
         }
     }
 
@@ -199,7 +199,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             connections.broadcastAll(gameID, gson.toJson(notif));
 
         } catch (Exception e) {
-            sendError(session, "Error: " + e.getMessage());
+            sendError(session, e.getMessage());
         }
     }
 
@@ -209,7 +209,10 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     private void sendError(Session session, String errorMsg) {
         try {
-            ErrorMessage err = new ErrorMessage(errorMsg);
+            while (errorMsg.startsWith("Error: ")) {
+                errorMsg = errorMsg.substring(7).stripLeading();
+            }
+            ErrorMessage err = new ErrorMessage("Error: " + errorMsg);
             session.getRemote().sendString(gson.toJson(err));
         } catch (IOException ignored) {}
     }
