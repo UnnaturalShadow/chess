@@ -9,24 +9,24 @@ import java.util.Objects;
 
 import static server.Server.setErrorContext;
 
-public class AuthHandler
-{
+public class AuthHandler {
 
     private final AuthService authService;
 
-    public AuthHandler(AuthService authService)
-    {
+    public AuthHandler(AuthService authService) {
         this.authService = Objects.requireNonNull(authService);
     }
 
     public void logout(Context ctx) {
         String token = ctx.header("authorization");
+
         try {
             authService.logout(token);
             ctx.status(200);
+            ctx.result("{}");
 
         } catch (InvalidCredentialsException e) {
-            setErrorContext(ctx, e.getMessage(), 401);
+            setErrorContext(ctx, "Error: Invalid or expired token", 401);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);

@@ -23,79 +23,61 @@ public class GameHandler {
         this.gameService = Objects.requireNonNull(gameService);
     }
 
-    // -------------------------------------------------------
-    // LIST
-    // -------------------------------------------------------
-
     public void list(Context ctx) {
         String token = ctx.header("authorization");
 
         try {
             List<GameData> games = gameService.list(token);
-            ctx.result(buildJson("games", games));
             ctx.status(200);
+            ctx.result(buildJson("games", games));
 
         } catch (InvalidCredentialsException e) {
-            setErrorContext(ctx, e.getMessage(), 401);
+            setErrorContext(ctx, "Error: User not found.", 401);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);
-        } catch (Exception e) { // catch everything else
-            setErrorContext(ctx, "Unexpected error", 500);
         }
     }
-
-    // -------------------------------------------------------
-    // CREATE
-    // -------------------------------------------------------
 
     public void create(Context ctx) {
-
         String token = ctx.header("authorization");
+        CreateRequest req = gson.fromJson(ctx.body(), CreateRequest.class);
 
         try {
-            CreateRequest req = gson.fromJson(ctx.body(), CreateRequest.class);
             int gameID = gameService.create(token, req);
-
-            ctx.result(buildJson("gameID", gameID));
             ctx.status(200);
+            ctx.result(buildJson("gameID", gameID));
 
         } catch (InvalidCredentialsException e) {
-            setErrorContext(ctx, e.getMessage(), 401);
+            setErrorContext(ctx, "Error: User not found.", 401);
 
         } catch (MissingFieldException e) {
-            setErrorContext(ctx, e.getMessage(), 400);
+            setErrorContext(ctx, "Error: Game name is required", 400);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);
         }
     }
 
-    // -------------------------------------------------------
-    // JOIN
-    // -------------------------------------------------------
-
     public void join(Context ctx) {
-
         String token = ctx.header("authorization");
+        JoinRequest req = gson.fromJson(ctx.body(), JoinRequest.class);
 
         try {
-            JoinRequest req = gson.fromJson(ctx.body(), JoinRequest.class);
             gameService.join(token, req);
-
             ctx.status(200);
 
         } catch (InvalidCredentialsException e) {
-            setErrorContext(ctx, e.getMessage(), 401);
+            setErrorContext(ctx, "Error: User not found.", 401);
 
         } catch (MissingFieldException e) {
-            setErrorContext(ctx, e.getMessage(), 400);
+            setErrorContext(ctx, "Error: Join requires a game ID", 400);
 
         } catch (GameNotFoundException e) {
-            setErrorContext(ctx, e.getMessage(), 400);
+            setErrorContext(ctx, "Error: Game not found", 400);
 
         } catch (AlreadyTakenException e) {
-            setErrorContext(ctx, e.getMessage(), 403);
+            setErrorContext(ctx, "Error: Color already taken", 403);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);
