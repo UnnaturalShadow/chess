@@ -3,86 +3,50 @@ package chess;
 import com.google.gson.annotations.SerializedName;
 import java.util.Objects;
 
-/**
- * Represents a single square position on a chess board
- * <p>
- * Note: You can add to this class, but you may not alter
- * signature of the existing methods.
- */
-public class ChessPosition
-{
-    private int row;
+public class ChessPosition {
+
+    private final int row;
+
     @SerializedName(value = "col", alternate = {"column"})
-    private int col;
+    private final int col;
 
-
-    public ChessPosition(int row, int col)
-    {
+    public ChessPosition(int row, int col) {
         this.row = row;
         this.col = col;
     }
 
-    /**
-     * @return which row this position is in
-     * 1 codes for the bottom row
-     */
-    public int getRow()
-    {
+    public int getRow() {
         return row;
     }
 
-    /**
-     * @return which column this position is in
-     * 1 codes for the left row
-     */
-    public int getColumn()
-    {
+    public int getColumn() {
         return col;
     }
 
+    public static ChessPosition fromAlgebraic(String s) {
+        if (s == null || s.length() != 2) {
+            throw new IllegalArgumentException("Bad pos");
+        }
+
+        int c = s.charAt(0) - 'a' + 1;
+        int r = s.charAt(1) - '1' + 1;
+
+        return new ChessPosition(r, c);
+    }
+
     @Override
-    public int hashCode()
-    {
+    public boolean equals(Object o) {
+        if (!(o instanceof ChessPosition other)) return false;
+        return row == other.row && col == other.col;
+    }
+
+    @Override
+    public int hashCode() {
         return Objects.hash(row, col);
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass())
-        {
-            return false;
-        }
-        ChessPosition that = (ChessPosition) o;
-        return row == that.row && col == that.col;
-    }
-
-
-    public String toString()
-    {
-        return "Postion: (" + row + ", " + col + ")";
-    }
-
-    public static ChessPosition fromAlgebraic(String algebraic) {
-        if (algebraic == null || algebraic.length() != 2) {
-            throw new IllegalArgumentException("Invalid algebraic position: " + algebraic);
-        }
-
-        char fileChar = algebraic.charAt(0);
-        char rankChar = algebraic.charAt(1);
-
-        int col = fileChar - 'a' + 1;  // 'a' -> 1, 'b' -> 2, ..., 'h' -> 8
-        int row = rankChar - '1' + 1;  // '1' -> 1, '2' -> 2, ..., '8' -> 8
-
-        if (col < 1 || col > 8 || row < 1 || row > 8) {
-            throw new IllegalArgumentException("Invalid algebraic position: " + algebraic);
-        }
-
-        return new ChessPosition(row, col);
+    public String toString() {
+        return "(" + row + "," + col + ")";
     }
 }
-

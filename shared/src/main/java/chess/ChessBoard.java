@@ -1,61 +1,32 @@
 package chess;
-import javax.swing.*;
+
 import java.util.Arrays;
 import java.util.Objects;
 
-/**
- * A chessboard that can hold and rearrange chess pieces.
- * <p>
- * Note: You can add to this class, but you may not alter
- * signature of the existing methods.
- */
-public class ChessBoard
-{
-    ChessPiece[][] board;
+public class ChessBoard {
 
-    public ChessBoard()
-    {
-        board = new ChessPiece[8][8];
+    private final ChessPiece[][] board;
+
+    public ChessBoard() {
+        this.board = new ChessPiece[8][8];
     }
 
-    /**
-     * Adds a chess piece to the chessboard
-     *
-     * @param position where to add the piece to
-     * @param piece    the piece to add
-     */
-    public void addPiece(ChessPosition position, ChessPiece piece)
-    {
-        board[position.getRow()-1][position.getColumn()-1] = piece;
+    public void addPiece(ChessPosition position, ChessPiece piece) {
+        board[position.getRow() - 1][position.getColumn() - 1] = piece;
     }
 
-
-    public boolean inBounds(ChessPosition position)
-    {
-        int row = position.getRow();
-        int col = position.getColumn();
-        return row >= 1 && row <= 8 && col >= 1 && col <= 8;
+    public ChessPiece getPiece(ChessPosition position) {
+        return board[position.getRow() - 1][position.getColumn() - 1];
     }
 
-    /**
-     * Gets a chess piece on the chessboard
-     *
-     * @param position The position to get the piece from
-     * @return Either the piece at the position, or null if no piece is at that
-     * position
-     */
-    public ChessPiece getPiece(ChessPosition position)
-    {
-        return board[position.getRow()-1][position.getColumn()-1];
+    public boolean inBounds(ChessPosition position) {
+        int r = position.getRow();
+        int c = position.getColumn();
+        return r >= 1 && r <= 8 && c >= 1 && c <= 8;
     }
 
-    /**
-     * Sets the board to the default starting board
-     * (How the game of chess normally starts)
-     */
-    public void resetBoard()
-    {
-        ChessPiece.PieceType[] backRowOrder = {
+    public void resetBoard() {
+        ChessPiece.PieceType[] backRow = {
                 ChessPiece.PieceType.ROOK,
                 ChessPiece.PieceType.KNIGHT,
                 ChessPiece.PieceType.BISHOP,
@@ -68,65 +39,47 @@ public class ChessBoard
 
         ChessGame.TeamColor team = ChessGame.TeamColor.WHITE;
 
-        for (int i = 0; i < 2; i++)
-        {
-            int row = (team == ChessGame.TeamColor.WHITE) ? 1 : 8;
+        for (int cycle = 0; cycle < 2; cycle++) {
             int pawnRow = (team == ChessGame.TeamColor.WHITE) ? 2 : 7;
+            int majorRow = (team == ChessGame.TeamColor.WHITE) ? 1 : 8;
 
-            for (int col = 1; col <= 8; col++)
-            {
-                ChessPosition pos = new ChessPosition(pawnRow, col);
-                addPiece(pos, new ChessPiece(team, ChessPiece.PieceType.PAWN));
+            for (int col = 1; col <= 8; col++) {
+                addPiece(new ChessPosition(pawnRow, col),
+                        new ChessPiece(team, ChessPiece.PieceType.PAWN));
             }
 
-            for (int col = 1; col <= 8; col++)
-            {
-                ChessPosition pos = new ChessPosition(row, col);
-                addPiece(pos, new ChessPiece(team, backRowOrder[col - 1]));
+            for (int col = 1; col <= 8; col++) {
+                addPiece(new ChessPosition(majorRow, col),
+                        new ChessPiece(team, backRow[col - 1]));
             }
 
             team = ChessGame.TeamColor.BLACK;
         }
     }
 
-    public String toString()
-    {
-        String str = "";
-        for(int i = 0; i < board.length; i++)
-        {
-            for(int j = 0; j < board[i].length; j++)
-            {
-                if(board[i][j] == null)
-                {
-                    str += ".";
-                }
-                else {
-                    str += board[i][j].getLetter();
-                    str += " ";
-                }
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (ChessPiece[] row : board) {
+            for (ChessPiece p : row) {
+                sb.append(p == null ? "." : p.getLetter()).append(" ");
             }
-            str += "\n";
+            sb.append("\n");
         }
-        return str;
+
+        return sb.toString();
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Arrays.deepHashCode(board);
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass())
-        {
-            return false;
-        }
-        ChessBoard that = (ChessBoard) o;
-        return Objects.deepEquals(board, that.board);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ChessBoard other)) return false;
+        return Objects.deepEquals(board, other.board);
     }
 }
