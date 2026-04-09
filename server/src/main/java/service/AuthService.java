@@ -7,64 +7,53 @@ import dataaccess.exceptions.InvalidCredentialsException;
 import java.util.Objects;
 import java.util.UUID;
 
-public class AuthService
-{
+public class AuthService {
 
-    private final AuthDAO authDAO;
+    private final AuthDAO dao;
 
-    public AuthService(AuthDAO authDAO)
-    {
-        this.authDAO = Objects.requireNonNull(authDAO);
+    public AuthService(AuthDAO dao) {
+        this.dao = Objects.requireNonNull(dao);
     }
 
-    // --- Public API ---
+    public String generateToken(String username) throws DataAccessException {
+        assertNotBlank(username, "Username is required");
 
-    public String generateToken(String username) throws DataAccessException
-    {
-        requireNonBlank(username, "Username is required");
-
-        String token = createToken();
-        storeToken(username, token);
+        String token = UUID.randomUUID().toString();
+        persistToken(username, token);
 
         return token;
     }
 
     public void logout(String token) throws DataAccessException, InvalidCredentialsException {
-        requireAuthenticated(token);
-        revokeToken(token);
-    }
+        String user = resolveUser(token);
 
-
-    // --- Private Helpers ---
-
-    private String createToken()
-    {
-        return UUID.randomUUID().toString();
-    }
-
-    private void storeToken(String username, String token) throws DataAccessException
-    {
-        authDAO.addToken(username, token);
-    }
-
-    private void revokeToken(String token) throws DataAccessException
-    {
-        authDAO.removeToken(token);
-    }
-
-    private void requireAuthenticated(String token) throws DataAccessException, InvalidCredentialsException {
-        requireNonBlank(token, "Token required");
-        String username = authDAO.findUsernameByToken(token);
-        if (username == null) {
+        if (user == null) {
             throw new InvalidCredentialsException("Error: Invalid or expired token");
         }
+
+        revoke(token);
     }
 
-    private void requireNonBlank(String value, String message) throws DataAccessException
-    {
-        if (value == null || value.isBlank())
-        {
-            throw new DataAccessException(message);
+    // ---------------- internal helpers ----------------
+
+    private void persistToken(String username, String token) throws DataAccessException {
+        dao.addToken(username, token);
+    }
+
+    private void revoke(String token) throws DataAccessException {
+        dao.removeToken(token);
+    }
+
+    private String resolveUser(String token) throws DataAccessException {
+        if (token == null || token.isBlank()) {
+            throw new DataAccessException("Token required");
+        }
+        return dao.findUsernameByToken(token);
+    }
+
+    private void assertNotBlank(String value, String msg) throws DataAccessException {
+        if (value == null || value.trim().isEmpty()) {
+            throw new DataAccessException(msg);
         }
     }
 }

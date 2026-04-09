@@ -1,5 +1,6 @@
 package service;
 
+import chess.InvalidMoveException;
 import dataaccess.AuthDAO;
 import dataaccess.GameDAO;
 import dataaccess.exceptions.*;
@@ -9,41 +10,31 @@ import requests.CreateRequest;
 import requests.JoinRequest;
 import chess.ChessGame;
 import chess.ChessMove;
-import exception.InvalidMoveException;
 
 import java.util.List;
 
 public class GameService {
 
-    private final GameDAO gameDAO;
-    private final AuthDAO authDAO;
+    private final GameDAO games;
+    private final AuthDAO auth;
 
-    public GameService(GameDAO gameDAO, AuthDAO authDAO) {
-        this.gameDAO = gameDAO;
-        this.authDAO = authDAO;
+    public GameService(GameDAO games, AuthDAO auth) {
+        this.games = games;
+        this.auth = auth;
     }
 
-    // -------------------------------------------------------
-    // LIST GAMES
-    // -------------------------------------------------------
-    public List<GameData> list(String token) throws InvalidCredentialsException, DataAccessException {
-        authenticate(token);
-        return gameDAO.findAll();
+    public List<GameData> list(String token) throws DataAccessException, InvalidCredentialsException {
+        authenticateOrThrow(token);
+        return games.findAll();
     }
 
-    // -------------------------------------------------------
-    // CREATE GAME
-    // -------------------------------------------------------
     public int create(String token, CreateRequest request)
-            throws InvalidCredentialsException, MissingFieldException, DataAccessException {
+            throws DataAccessException, InvalidCredentialsException, MissingFieldException {
 
-        authenticate(token);
+        authenticateOrThrow(token);
+        ensureRequestValid(request);
 
-        if (request == null || request.gameName() == null || request.gameName().isBlank()) {
-            throw new MissingFieldException("Error: Game name is required");
-        }
-
-        GameData game = new GameData(
+        GameData newGame = new GameData(
                 0,
                 null,
                 null,
@@ -52,165 +43,164 @@ public class GameService {
                 false
         );
 
-        return gameDAO.save(game);
+        return games.save(newGame);
     }
 
-    // -------------------------------------------------------
-    // JOIN GAME
-    // -------------------------------------------------------
     public void join(String token, JoinRequest request)
-            throws InvalidCredentialsException,
+            throws DataAccessException,
+            InvalidCredentialsException,
             MissingFieldException,
             GameNotFoundException,
-            AlreadyTakenException,
-            DataAccessException {
+            AlreadyTakenException {
 
-        String username = authenticate(token);
+        String user = authenticateOrThrow(token);
 
-        if (request == null) {
-            throw new MissingFieldException("Error: Join requires a game ID");
-        }
+        validateJoinRequest(request);
 
-        if (request.gameID() <= 0) {
-            throw new GameNotFoundException("Error: Game ID must be positive");
-        }
-
-        GameData game = gameDAO.findById(request.gameID());
-        if (game == null) {
+        GameData existing = games.findById(request.gameID());
+        if (existing == null) {
             throw new GameNotFoundException("Error: Game not found");
         }
 
-        PlayerColor color = parseColor(request.playerColor());
+        PlayerColor color = toColor(request.playerColor());
 
-        gameDAO.assignPlayer(request.gameID(), username, color);
+        games.assignPlayer(request.gameID(), user, color);
     }
 
-    // -------------------------------------------------------
-    // MAKE MOVE (NEW - PHASE 6)
-    // -------------------------------------------------------
-    public GameData makeMove(String token, int gameID, ChessMove move)
-            throws InvalidCredentialsException,
+    public GameData makeMove(String token, int gameId, ChessMove move)
+            throws DataAccessException,
+            InvalidCredentialsException,
             GameNotFoundException,
-            DataAccessException,
             InvalidMoveException {
 
-        String username = authenticate(token);
+        String user = authenticateOrThrow(token);
 
-        GameData gameData = gameDAO.findById(gameID);
-        if (gameData == null) {
+        GameData snapshot = games.findById(gameId);
+        if (snapshot == null) {
             throw new GameNotFoundException("Error: Game not found");
         }
 
-        ChessGame game = gameData.game();
+        ChessGame game = snapshot.game();
         if (game == null) {
             throw new InvalidMoveException("Error: Game state missing");
         }
 
-        if (gameData.gameOver()) {
+        if (snapshot.gameOver()) {
             throw new InvalidMoveException("Error: Game already over");
         }
 
-        // Determine player color
-        PlayerColor playerColor = null;
-        if (username.equals(gameData.whiteUsername())) {
-            playerColor = PlayerColor.WHITE;
-        } else if (username.equals(gameData.blackUsername())) {
-            playerColor = PlayerColor.BLACK;
-        } else {
-            throw new InvalidMoveException("Error: Observers cannot make moves");
+        PlayerColor side = resolvePlayerSide(user, snapshot);
+
+        verifyTurn(game, side);
+
+        applyMove(game, move);
+
+        boolean finished =
+                game.isInCheckmate(game.getTeamTurn())
+                        || game.isInStalemate(game.getTeamTurn());
+
+        GameData updated = new GameData(
+                snapshot.gameID(),
+                snapshot.whiteUsername(),
+                snapshot.blackUsername(),
+                snapshot.gameName(),
+                game,
+                finished
+        );
+
+        games.update(updated);
+
+        return updated;
+    }
+
+    public void resign(String token, int gameId)
+            throws DataAccessException,
+            InvalidCredentialsException,
+            GameNotFoundException,
+            InvalidMoveException {
+
+        String user = authenticateOrThrow(token);
+
+        GameData game = games.findById(gameId);
+        if (game == null) {
+            throw new GameNotFoundException("Error: Game not found");
         }
 
-        // Check turn
-        ChessGame.TeamColor expectedTurn = ChessGame.TeamColor.valueOf(playerColor.name());
-        if (!game.getTeamTurn().equals(expectedTurn))
-        {
+        if (game.gameOver()) {
+            throw new InvalidMoveException("Error: Game already over");
+        }
+
+        if (!isParticipant(user, game)) {
+            throw new InvalidMoveException("Error: Observers cannot resign");
+        }
+
+        GameData updated = new GameData(
+                game.gameID(),
+                game.whiteUsername(),
+                game.blackUsername(),
+                game.gameName(),
+                game.game(),
+                true
+        );
+
+        games.update(updated);
+    }
+
+    // ---------------- helpers ----------------
+
+    private String authenticateOrThrow(String token)
+            throws DataAccessException, InvalidCredentialsException {
+
+        String user = auth.findUsernameByToken(token);
+        if (user == null) {
+            throw new InvalidCredentialsException("Error: Invalid or expired token");
+        }
+        return user;
+    }
+
+    private void ensureRequestValid(CreateRequest req) throws MissingFieldException {
+        if (req == null || req.gameName() == null || req.gameName().isBlank()) {
+            throw new MissingFieldException("Error: Game name is required");
+        }
+    }
+
+    private void validateJoinRequest(JoinRequest req) throws MissingFieldException {
+        if (req == null || req.gameID() <= 0) {
+            throw new MissingFieldException("Error: Invalid join request");
+        }
+    }
+
+    private PlayerColor toColor(String raw) throws MissingFieldException {
+        if ("WHITE".equalsIgnoreCase(raw)) return PlayerColor.WHITE;
+        if ("BLACK".equalsIgnoreCase(raw)) return PlayerColor.BLACK;
+        throw new MissingFieldException("Error: Invalid Color");
+    }
+
+    private PlayerColor resolvePlayerSide(String user, GameData game) {
+        if (user.equals(game.whiteUsername())) return PlayerColor.WHITE;
+        if (user.equals(game.blackUsername())) return PlayerColor.BLACK;
+        throw new RuntimeException("Observers not allowed to act as players");
+    }
+
+    private void verifyTurn(ChessGame game, PlayerColor side) throws InvalidMoveException {
+        ChessGame.TeamColor expected =
+                ChessGame.TeamColor.valueOf(side.name());
+
+        if (!game.getTeamTurn().equals(expected)) {
             throw new InvalidMoveException("Error: Not your turn");
         }
+    }
 
-        // Attempt move (ChessGame should validate legality)
+    private void applyMove(ChessGame game, ChessMove move) throws InvalidMoveException {
         try {
             game.makeMove(move);
         } catch (Exception e) {
             throw new InvalidMoveException("Error: Invalid move");
         }
-
-        boolean gameOver = game.isInCheckmate(game.getTeamTurn()) || game.isInStalemate(game.getTeamTurn());
-
-        // Save updated game
-        GameData updated = new GameData(
-                gameData.gameID(),
-                gameData.whiteUsername(),
-                gameData.blackUsername(),
-                gameData.gameName(),
-                game,
-                gameOver
-        );
-
-        gameDAO.update(updated);
-
-        return updated;
     }
 
-    public void resign(String token, int gameID)
-            throws InvalidCredentialsException,
-            GameNotFoundException,
-            DataAccessException,
-            InvalidMoveException {
-
-        String username = authenticate(token);
-
-        GameData gameData = gameDAO.findById(gameID);
-        if (gameData == null) {
-            throw new GameNotFoundException("Error: Game not found");
-        }
-
-        if (gameData.gameOver()) {
-            throw new InvalidMoveException("Error: Game already over");
-        }
-
-        boolean isWhite = username.equals(gameData.whiteUsername());
-        boolean isBlack = username.equals(gameData.blackUsername());
-
-        if (!isWhite && !isBlack) {
-            throw new InvalidMoveException("Error: Observers cannot resign");
-        }
-
-        GameData updated = new GameData(
-                gameData.gameID(),
-                gameData.whiteUsername(),
-                gameData.blackUsername(),
-                gameData.gameName(),
-                gameData.game(),
-                true // gameOver = true
-        );
-
-        gameDAO.update(updated);
-    }
-
-    // -------------------------------------------------------
-    // HELPER METHODS
-    // -------------------------------------------------------
-    private String authenticate(String token) throws InvalidCredentialsException, DataAccessException {
-        String username = authDAO.findUsernameByToken(token);
-        if (username == null) {
-            throw new InvalidCredentialsException("Error: User not found.");
-        }
-        return username;
-    }
-
-    private PlayerColor parseColor(String raw) throws MissingFieldException {
-        if (raw == null || raw.isBlank()) {
-            throw new MissingFieldException("Error: Color is required");
-        }
-
-        if (raw.equalsIgnoreCase("WHITE")) {
-            return PlayerColor.WHITE;
-        }
-
-        if (raw.equalsIgnoreCase("BLACK")) {
-            return PlayerColor.BLACK;
-        }
-
-        throw new MissingFieldException("Error: Invalid Color");
+    private boolean isParticipant(String user, GameData game) {
+        return user.equals(game.whiteUsername())
+                || user.equals(game.blackUsername());
     }
 }
