@@ -2,6 +2,7 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 public class ChessGame {
 
@@ -153,5 +154,21 @@ public class ChessGame {
 
     public ChessBoard getBoard() {
         return table;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ChessGame chessGame = (ChessGame) o;
+
+        return turn == chessGame.turn &&
+                Objects.equals(table, chessGame.table);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(turn, table);
     }
 }
