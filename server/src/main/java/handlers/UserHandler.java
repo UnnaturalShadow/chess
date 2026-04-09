@@ -37,15 +37,23 @@ public class UserHandler {
         RegisterRequest req = gson.fromJson(ctx.body(), RegisterRequest.class);
 
         try {
-            AuthResult result = userService.register(req.username(), req.password(), req.email());
-            ctx.status(200);
-            ctx.result(buildJson("username", result.username(), "authToken", result.authToken()));
+            AuthResult result = userService.register(
+                    req.username(),
+                    req.password(),
+                    req.email()
+            );
 
-        } catch (MissingFieldException e) {
-            setErrorContext(ctx, "Error: Username and password are required", 400);
+            ctx.status(200);
+            ctx.result(buildJson(
+                    "username", result.username(),
+                    "authToken", result.authToken()
+            ));
 
         } catch (AlreadyTakenException e) {
             setErrorContext(ctx, "Error: Username already in use", 403);
+
+        } catch (MissingFieldException e) {
+            setErrorContext(ctx, "Error: Username and password are required", 400);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);
@@ -57,17 +65,21 @@ public class UserHandler {
 
         try {
             AuthResult result = userService.login(req.username(), req.password());
-            ctx.status(200);
-            ctx.result(buildJson("username", result.username(), "authToken", result.authToken()));
 
-        } catch (MissingFieldException e) {
-            setErrorContext(ctx, "Error: Username and password are required", 400);
+            ctx.status(200);
+            ctx.result(buildJson(
+                    "username", result.username(),
+                    "authToken", result.authToken()
+            ));
+
+        } catch (InvalidCredentialsException e) {
+            setErrorContext(ctx, "Error: Invalid username or password", 401);
 
         } catch (UserNotAuthenticatedException e) {
             setErrorContext(ctx, "Error: User is not authenticated", 401);
 
-        } catch (InvalidCredentialsException e) {
-            setErrorContext(ctx, "Error: Invalid username or password", 401);
+        } catch (MissingFieldException e) {
+            setErrorContext(ctx, "Error: Username and password are required", 400);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);

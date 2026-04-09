@@ -48,11 +48,11 @@ public class GameHandler {
             ctx.status(200);
             ctx.result(buildJson("gameID", gameID));
 
-        } catch (InvalidCredentialsException e) {
-            setErrorContext(ctx, "Error: User not found.", 401);
-
         } catch (MissingFieldException e) {
             setErrorContext(ctx, "Error: Game name is required", 400);
+
+        } catch (InvalidCredentialsException e) {
+            setErrorContext(ctx, "Error: User not found.", 401);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);
@@ -67,17 +67,17 @@ public class GameHandler {
             gameService.join(token, req);
             ctx.status(200);
 
-        } catch (InvalidCredentialsException e) {
-            setErrorContext(ctx, "Error: User not found.", 401);
-
-        } catch (MissingFieldException e) {
-            setErrorContext(ctx, "Error: Join requires a game ID", 400);
+        } catch (AlreadyTakenException e) {
+            setErrorContext(ctx, "Error: Color already taken", 403);
 
         } catch (GameNotFoundException e) {
             setErrorContext(ctx, "Error: Game not found", 400);
 
-        } catch (AlreadyTakenException e) {
-            setErrorContext(ctx, "Error: Color already taken", 403);
+        } catch (MissingFieldException e) {
+            setErrorContext(ctx, "Error: Join requires a game ID", 400);
+
+        } catch (InvalidCredentialsException e) {
+            setErrorContext(ctx, "Error: User not found.", 401);
 
         } catch (DataAccessException e) {
             setErrorContext(ctx, "Internal Server Error", 500);
