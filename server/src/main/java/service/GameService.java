@@ -171,14 +171,26 @@ public class GameService {
     }
 
     private PlayerColor toColor(String raw) throws MissingFieldException {
-        if ("WHITE".equalsIgnoreCase(raw)) return PlayerColor.WHITE;
-        if ("BLACK".equalsIgnoreCase(raw)) return PlayerColor.BLACK;
+        if ("WHITE".equalsIgnoreCase(raw))
+        {
+            return PlayerColor.WHITE;
+        }
+        if ("BLACK".equalsIgnoreCase(raw))
+        {
+            return PlayerColor.BLACK;
+        }
         throw new MissingFieldException("Error: Invalid Color");
     }
 
     private PlayerColor resolvePlayerSide(String user, GameData game) {
-        if (user.equals(game.whiteUsername())) return PlayerColor.WHITE;
-        if (user.equals(game.blackUsername())) return PlayerColor.BLACK;
+        if (user.equals(game.whiteUsername()))
+        {
+            return PlayerColor.WHITE;
+        }
+        if (user.equals(game.blackUsername()))
+        {
+            return PlayerColor.BLACK;
+        }
         throw new RuntimeException("Observers not allowed to act as players");
     }
 

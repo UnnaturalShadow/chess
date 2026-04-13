@@ -42,7 +42,10 @@ public class ChessPiece {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ChessPiece other)) return false;
+        if (!(o instanceof ChessPiece other))
+        {
+            return false;
+        }
         return color == other.color && type == other.type;
     }
 

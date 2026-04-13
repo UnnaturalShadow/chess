@@ -78,8 +78,14 @@ public class ChessBoard {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ChessBoard other)) return false;
+        if (this == o)
+        {
+            return true;
+        }
+        if (!(o instanceof ChessBoard other))
+        {
+            return false;
+        }
         return Objects.deepEquals(board, other.board);
     }
 }

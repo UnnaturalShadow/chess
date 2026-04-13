@@ -33,7 +33,10 @@ public class ChessGame {
 
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         ChessPiece piece = table.getPiece(startPosition);
-        if (piece == null) return null;
+        if (piece == null)
+        {
+            return null;
+        }
 
         Collection<ChessMove> raw = piece.pieceMoves(table, startPosition);
         Collection<ChessMove> legal = new ArrayList<>();
@@ -64,8 +67,14 @@ public class ChessGame {
     public void makeMove(ChessMove move) throws InvalidMoveException {
         ChessPiece piece = table.getPiece(move.getStartPosition());
 
-        if (piece == null) throw new InvalidMoveException("No piece selected.");
-        if (piece.getTeamColor() != turn) throw new InvalidMoveException("Wrong turn.");
+        if (piece == null)
+        {
+            throw new InvalidMoveException("No piece selected.");
+        }
+        if (piece.getTeamColor() != turn)
+        {
+            throw new InvalidMoveException("Wrong turn.");
+        }
 
         if (!validMoves(move.getStartPosition()).contains(move)) {
             throw new InvalidMoveException("Illegal move.");
@@ -104,7 +113,10 @@ public class ChessGame {
 
         for (int r = 1; r <= 8; r++) {
             for (int c = 1; c <= 8; c++) {
-                if (isThreat(r, c, color, king)) return true;
+                if (isThreat(r, c, color, king))
+                {
+                    return true;
+                }
             }
         }
         return false;
@@ -114,10 +126,16 @@ public class ChessGame {
         ChessPosition pos = new ChessPosition(r, c);
         ChessPiece p = table.getPiece(pos);
 
-        if (p == null || p.getTeamColor() == color) return false;
+        if (p == null || p.getTeamColor() == color)
+        {
+            return false;
+        }
 
         for (ChessMove m : p.pieceMoves(table, pos)) {
-            if (m.getEndPosition().equals(king)) return true;
+            if (m.getEndPosition().equals(king))
+            {
+                return true;
+            }
         }
 
         return false;
@@ -158,8 +176,14 @@ public class ChessGame {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
 
         ChessGame chessGame = (ChessGame) o;
 

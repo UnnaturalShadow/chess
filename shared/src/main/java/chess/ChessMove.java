@@ -35,7 +35,10 @@ public class ChessMove {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ChessMove other)) return false;
+        if (!(o instanceof ChessMove other))
+        {
+            return false;
+        }
 
         return Objects.equals(start, other.start)
                 && Objects.equals(end, other.end)
